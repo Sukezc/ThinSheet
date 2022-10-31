@@ -22,36 +22,6 @@ last modify date:2022.8.1
 #include<ctime>
 #include<iostream>
 
-//int main()
-//{
-//	ElementGroup Egold; ElementGroup Egnew; ModelConf model;
-//	model.criticalangle = 22.0;
-//	Egold.XGroup.resize(3, 2.0); Egold.YGroup.resize(3, 1.0);
-//	Egnew.XGroup.resize(3, 3.0); Egnew.YGroup.resize(3, 4.0);
-//
-//	Egold.g = 5.02; Egnew.density = -0.02;
-//	ElementGroup::SaveState(&Egold, &Egnew, &model, "test");
-//	ElementGroup::LoadState(&Egold, &Egnew, &model, "test");
-//	std::cout << model.criticalangle << std::endl;
-//	for (auto& it : Egold.XGroup)
-//	{
-//		std::cout << it << std::endl;
-//	}
-//	for (auto& it : Egnew.YGroup)
-//	{
-//		std::cout << it << std::endl;
-//	}
-//	for (auto& it : Egold.YGroup)
-//	{
-//		std::cout << it << std::endl;
-//	}
-//	for (auto& it : Egnew.XGroup)
-//	{
-//		std::cout << it << std::endl;
-//	}
-//	std::cout << Egold.g << " " << Egnew.density << std::endl;
-//	return 0;
-//}
 
 int main(int argc, char* argv[])
 {
