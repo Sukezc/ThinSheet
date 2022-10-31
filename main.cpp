@@ -56,7 +56,6 @@ last modify date:2022.8.1
 int main(int argc, char* argv[])
 {
 
-	//more test
 	ModelConf model;
 	if (argc != 2) 
 	{ 
