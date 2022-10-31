@@ -316,8 +316,8 @@ public:
 	
 	static void SaveState(ElementGroup* p_Egold, ElementGroup* p_Egnew, ModelConf* p_model,const std::string& outfile_name)
 	{
-		std::ofstream outfileEg; std::ofstream outfileModel;
-		outfileEg.open(outfile_name + "Eg.dat", std::ios::binary | std::ios::out);
+		std::ofstream outfileEg;
+		outfileEg.open(outfile_name, std::ios::binary | std::ios::out);
 		std::vector<double>::size_type BufferSize;
 		for (int i = 0; i < ElementGroup::vector_num; i++)
 		{
@@ -333,18 +333,15 @@ public:
 		ptrdiff_t retbyte = (char*)(p_Egold + 1) - ret_old;
 		outfileEg.write(ret_old, retbyte);
 		outfileEg.write(ret_new, retbyte);
-
-		outfileModel.open(outfile_name + "Model.dat", std::ios::binary | std::ios::out);
-		outfileModel.write((char*)p_model, sizeof(ModelConf));
-
+		outfileEg.write((char*)p_model, sizeof(ModelConf));
+		
 		outfileEg.close();
-		outfileModel.close();
 	}
 
 	static void LoadState(ElementGroup* p_Egold, ElementGroup* p_Egnew, ModelConf* p_model,const std::string& infile_name)
 	{
-		std::ifstream infileEg; std::ifstream infileModel;
-		infileEg.open(infile_name + "Eg.dat", std::ios::binary | std::ios::in);
+		std::ifstream infileEg; 
+		infileEg.open(infile_name, std::ios::binary | std::ios::in);
 		std::vector<double>::size_type BufferSize;
 		for (int i = 0; i < ElementGroup::vector_num; i++)
 		{
@@ -360,11 +357,8 @@ public:
 		ptrdiff_t retbyte = (char*)(p_Egold + 1) - ret_old;
 		infileEg.read(ret_old, retbyte);
 		infileEg.read(ret_new, retbyte);
-
-		infileModel.open(infile_name + "Model.dat", std::ios::binary | std::ios::in);
-		infileModel.read((char*)p_model, sizeof(ModelConf));
-
+		infileEg.read((char*)p_model, sizeof(ModelConf));
+		
 		infileEg.close();
-		infileModel.close();
 	}
 };
