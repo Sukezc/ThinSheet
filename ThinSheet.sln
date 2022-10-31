@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.32126.315
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ThinSheet", "ThinSheet.vcxproj", "{D4657916-55B5-4D88-9128-E7E2AFD68F2F}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D4657916-55B5-4D88-9128-E7E2AFD68F2F}.Debug|x64.ActiveCfg = Debug|x64
+		{D4657916-55B5-4D88-9128-E7E2AFD68F2F}.Debug|x64.Build.0 = Debug|x64
+		{D4657916-55B5-4D88-9128-E7E2AFD68F2F}.Debug|x86.ActiveCfg = Debug|Win32
+		{D4657916-55B5-4D88-9128-E7E2AFD68F2F}.Debug|x86.Build.0 = Debug|Win32
+		{D4657916-55B5-4D88-9128-E7E2AFD68F2F}.Release|x64.ActiveCfg = Release|x64
+		{D4657916-55B5-4D88-9128-E7E2AFD68F2F}.Release|x64.Build.0 = Release|x64
+		{D4657916-55B5-4D88-9128-E7E2AFD68F2F}.Release|x86.ActiveCfg = Release|Win32
+		{D4657916-55B5-4D88-9128-E7E2AFD68F2F}.Release|x86.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {84D4BE9C-88AE-4FD9-A784-9D0447EC51A0}
+	EndGlobalSection
+EndGlobal
