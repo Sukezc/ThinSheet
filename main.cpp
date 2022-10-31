@@ -11,6 +11,7 @@ last modify date:2022.10.31
 稀疏矩阵库采用英伟达官方提供的cusolver库
 */
 
+//workflow based on vs studio 2019 and github
 
 #include"element_handle.h"
 #include"CusolverSpHandle.h"
