@@ -32,6 +32,7 @@
     <ClInclude Include="computeWidget.h" />
     <ClInclude Include="CudaAllocator.h" />
     <ClInclude Include="CusolverRfHandle.h" />
+    <ClInclude Include="element_iterate_gpu.h" />
     <ClInclude Include="ObjFactory.h" />
     <ClInclude Include="element_iterate.h" />
     <ClInclude Include="element_handle.h" />
@@ -40,6 +41,9 @@
     <ClInclude Include="Parser.h" />
     <ClInclude Include="SolverInterface.h" />
     <ClInclude Include="Xml.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <CudaCompile Include="element_iterate_gpu.cu" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
@@ -172,6 +176,7 @@
     <CudaCompile>
       <TargetMachinePlatform>64</TargetMachinePlatform>
       <AdditionalOptions>--extended-lambda %(AdditionalOptions)</AdditionalOptions>
+      <CodeGeneration>compute_61,sm_61</CodeGeneration>
     </CudaCompile>
     <PostBuildEvent>
       <Command>copy $(SolutionDir)$(Platform)\$(Configuration)\$(ProjectName).exe D:\CODE\FileWorking\auto</Command>

@@ -1,6 +1,7 @@
 #pragma once
 #include"model.h"
 #include"element_handle.h"
+#include"element_iterate_gpu.h"
 #include<cmath>
 #include<algorithm>
 #include<iostream>

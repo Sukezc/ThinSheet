@@ -9,7 +9,7 @@ void computeKernel(bool saveFlag, ElementGroup& Egold, ElementGroup& Egnew, Solv
 	ElementGroup::InitializeTorqueGroup(model.num_iterate);
 	bool ResetMatrix;
 	Egold = ElementGroup(model); Egnew = ElementGroup(model);
-	for (int i = 0; i < model.num_iterate; i++)
+	for (int i = model.extrudepolicy.iterating; i < model.num_iterate; i++)
 	{
 		ResetMatrix = Elongate(Egold, Egnew, model);
 		deltaS_iterate(Egold, Egnew, model.dt);
