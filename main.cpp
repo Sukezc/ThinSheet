@@ -59,9 +59,27 @@ int main(int argc, char* argv[])
 		reinterpret_cast<CusolverSpHandle*>(SolverHandle)->solution = model.solution;
 	}
 	
-	std::pair<double, double> dampRate_innerProduct;
-	computeCriticalAngleRegressionBasedOnInnerProduct(argv[1],dampRate_innerProduct,Egold,Egnew,SolverHandle,model);
+#ifdef MY_WINDOWS
+	std::string mkdir = "md";
+	std::string copy = "copy";
+#else
+	std::string mkdir = "mkdir";
+	std::string copy = "cp";
+#endif // MY_WINDOWS
 
+	//std::pair<double, double> dampRate_innerProduct;
+	//computeCriticalAngleRegressionBasedOnInnerProduct(argv[1],dampRate_innerProduct,Egold,Egnew,SolverHandle,model);
+	//std::string dir = std::to_string(fabs(model.criticalangle));
+	std::string dir = "AngleFileTest";
+	system((mkdir + " " + dir).c_str());
+	system((copy + " " + "Conf.xml" + " " + dir).c_str());
+	std::ofstream outfile_xy(dir + "/" + model.XYaddress);
+	std::ofstream outfile_force(dir + "/" + model.Forceaddress);
+	std::ofstream outfile_Torque(dir + "/" + model.Torqueaddress);
+	computeKernel(true, Egold, Egnew, SolverHandle, model,outfile_xy, outfile_force);
+	vector_save(ElementGroup::GravityTorqueGroup, outfile_Torque);
+	vector_save(ElementGroup::PforceTorqueGroup, outfile_Torque);
+	
 	delete SolverHandle;
 	return 0;
 }

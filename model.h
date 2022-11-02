@@ -162,6 +162,23 @@ struct ModelConf
 			std::cout << "Ds:" << extrudepolicy.Ds << "\n";
 			std::cout << "DsEnd:" << extrudepolicy.DsEnd << "\n";
 		}
+
+		auto i = forceCondition;
+		switch (i)
+		{
+		case ForceCondition::BodyForceOnly:
+			std::cout << "BodyForceOnly" << "\n";
+			break;
+		case ForceCondition::SurfaceForceOnly:
+			std::cout << "SurfaceForceOnly" << "\n";
+			break;
+		case ForceCondition::SurfaceAndBodyForce:
+			std::cout << "SurfaceAndBodyForce" << "\n";
+			break;
+		default:
+			std::cout << "ForceCondition Failed!" << "\n";
+		}
+
 		std::cout << "slabLength:" << slabLength << "\n";
 		std::cout << "deltaS:" << deltaS << "\n";
 		std::cout << "taub:" << dt * deltaT_coefficient << "\n";
