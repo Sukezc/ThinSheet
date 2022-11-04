@@ -26,7 +26,6 @@ last modify date:2022.10.31
 int main()
 {
 	
-	
 	return 0;
 }
 
