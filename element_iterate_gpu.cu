@@ -66,17 +66,17 @@ extern "C"
 	void deltaS_iterate_gpu(double* deltaS_new, const double* deltaS_old, const double* velocity_old, const long long size, const double dt)
 	{
 		//cudaMemPrefetchAsync()
-		deltaS_iterate_kernel << <(size + 63) / 64, 64 >> > (deltaS_new,deltaS_old, velocity_old,size,dt);
+		deltaS_iterate_kernel << <(size + 31) / 32, 32 >> > (deltaS_new,deltaS_old, velocity_old,size,dt);
 	}
 
 	void theta_iterate_gpu(double* theta_new, const double* theta_old, const double* omega_old, const long long size, const double dt)
 	{
-		theta_iterate_kernel << <(size + 63) / 64, 64 >> > (theta_new,theta_old,omega_old,size - 1,dt);
+		theta_iterate_kernel << <(size + 31) / 32, 32 >> > (theta_new,theta_old,omega_old,size - 1,dt);
 	}
 
 	void H_iterate_gpu(double* H_new, const double* H_old, const double* Delta_old, const long long size, const double dt)
 	{
-		H_iterate_kernel << <(size + 63) / 64, 64 >> > (H_new, H_old, Delta_old, size, dt);
+		H_iterate_kernel << <(size + 31) / 32, 32 >> > (H_new, H_old, Delta_old, size, dt);
 	}
 
 	void K_iterate_gpu(double* K, const double* deltaS, const double* theta, const long long size)
@@ -95,27 +95,27 @@ extern "C"
 			theta[size - 2] * (dS0 + dS1) / (dS0 * dS1) +
 			theta[size - 3] * (-dS0) / ((dS1 + dS0) * dS1);
 
-		K_iterate_kernel << <(size + 63) / 64, 64 >> > (K, deltaS, theta, size);
+		K_iterate_kernel << <(size + 31) / 32, 32 >> > (K, deltaS, theta, size);
 	}
 
 	void bodyforce_compute_gpu(double* Gravity, double* GravityCos, double* GravitySin, const double* density, const double* H, const double* theta, const double g, const long long size)
 	{
-		bodyforce_compute_kernel << <(size + 63) / 64, 64 >> > (Gravity, density, H, theta, g, size, []__device__(double i) { return 1.0; });
-		bodyforce_compute_kernel << <(size + 63) / 64, 64 >> > (GravityCos, density, H, theta, g, size, [=] __device__(double i) { return cos(i); });
-		bodyforce_compute_kernel << <(size + 63) / 64, 64 >> > (GravitySin, density, H, theta, g, size, [=] __device__(double i) { return sin(i); });
+		bodyforce_compute_kernel << <(size + 31) / 32, 32 >> > (Gravity, density, H, theta, g, size, []__device__(double i) { return 1.0; });
+		bodyforce_compute_kernel << <(size + 31) / 32, 32 >> > (GravityCos, density, H, theta, g, size, [=] __device__(double i) { return cos(i); });
+		bodyforce_compute_kernel << <(size + 31) / 32, 32 >> > (GravitySin, density, H, theta, g, size, [=] __device__(double i) { return sin(i); });
 	}
 
 	void omega_iterate_gpu(double* omega, const double* Omega, const double* deltaS, const long long size)
 	{
 		omega[size - 1] = 0.0;
 		omega[size - 2] = -(Omega[size - 1] + Omega[size - 2]) * deltaS[size - 1] / 2.0;
-		omega_iterate_kernel << <(size + 63) / 64, 64 >> > (omega, Omega, deltaS, size);
+		omega_iterate_kernel << <(size + 31) / 32, 32 >> > (omega, Omega, deltaS, size);
 	}
 
 	void velocity_iterate_gpu(double* velocity, const double* Delta, const double* deltaS, const long long size)
 	{
 		velocity[size - 1] = 0.0;
 		velocity[size - 2] = (Delta[size - 1] + Delta[size - 2]) * deltaS[size - 1] / 2.0;
-		velocity_iterate_kernel << <(size + 63) / 64, 64 >> > (velocity, Delta, deltaS, size);
+		velocity_iterate_kernel << <(size + 31) / 32, 32 >> > (velocity, Delta, deltaS, size);
 	}
 }

@@ -22,19 +22,17 @@ last modify date:2022.10.31
 #include<ctime>
 #include<iostream>
 
-//int main()
-//{
-//	double* test = NULL;
-//	const double* consttest = NULL;
-//
-//	bodyforce_compute_gpu(test, test, test, consttest, consttest, consttest, 9.8, 10);
-//	return 0;
-//}
 
-
-int main(int argc, char* argv[])
+int main()
 {
+	
+	
+	return 0;
+}
 
+
+int mn(int argc, char* argv[])
+{
 	ModelConf model;
 	if (argc != 2) 
 	{ 

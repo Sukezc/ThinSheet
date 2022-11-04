@@ -71,6 +71,9 @@
     <ClInclude Include="element_iterate_gpu.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="CuVector.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="element_iterate_gpu.cu">
