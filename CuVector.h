@@ -90,8 +90,8 @@ public: \
 #define CUVECTOR_CLASS_END(...) };
 
 CUVECTOR_CLASS_BEGIN(dataType)
-CUVECTOR_CREATE_FUNCTION_BIND(resize, resize, (size_t)size)
-CUVECTOR_CREATE_FUNCTION_BIND(resize, resize, (size_t)size, (dataType)vals)
+CUVECTOR_CREATE_FUNCTION_BIND(resize, resize, (size_t) size)
+CUVECTOR_CREATE_FUNCTION_BIND(resize, resize, (size_t) size, (dataType) vals)
 
 CUVECTOR_CREATE_FUNCTION_BEGIN(data, dataType*, (int))
 return d_vector.data().get();

@@ -4,30 +4,32 @@
 #include"element_iterate_gpu.h"
 #include<cmath>
 
+constexpr int threads = 128;
 
 __global__ void deltaS_iterate_kernel(double* deltaS_new, const double* deltaS_old, const double* velocity_old, const long long size, const double dt)
 {
 	int i = blockIdx.x * blockDim.x + threadIdx.x;
-	if (i >= size)return;
-	if(i>0) deltaS_new[i] = deltaS_old[i] + dt * (velocity_old[i - 1] - velocity_old[i]);
+	if(i>0 && i < size) deltaS_new[i] = deltaS_old[i] + dt * (velocity_old[i - 1] - velocity_old[i]);
 }
 
 __global__ void theta_iterate_kernel(double* theta_new, const double* theta_old, const double* omega_old, const long long size, const double dt)
 {
 	int i = blockIdx.x * blockDim.x + threadIdx.x;
-	if (i >= size)return;
-	theta_new[i] = theta_old[i] + dt * omega_old[i];
+	if (i < size) theta_new[i] = theta_old[i] + dt * omega_old[i];
 }
 
 __global__ void H_iterate_kernel(double* H_new, const double* H_old, const double* Delta_old, const long long size, const double dt)
 {
 	int i = blockIdx.x * blockDim.x + threadIdx.x;
-	if (i >= size)return;
-	double k1 = -H_old[i] * Delta_old[i];
-	double k2 = -(H_old[i] + dt / 2.0 * k1) * Delta_old[i];
-	double k3 = -(H_old[i] + dt / 2.0 * k2) * Delta_old[i];
-	double k4 = -(H_old[i] + dt * k3) * Delta_old[i];
-	H_new[i] = H_old[i] + dt / 6.0 * (k1 + 2.0 * k2 + 2.0 * k3 + k4);
+	if (i < size)
+	{
+		double H_temp = H_old[i], Delta_temp = Delta_old[i];
+		double k1 = -H_temp * Delta_temp;
+		double k2 = -(H_temp + dt / 2.0 * k1) * Delta_temp;
+		double k3 = -(H_temp + dt / 2.0 * k2) * Delta_temp;
+		double k4 = -(H_temp + dt * k3) * Delta_temp;
+		H_new[i] = H_temp + dt / 6.0 * (k1 + 2.0 * k2 + 2.0 * k3 + k4);
+	}
 }
 
 __global__ void K_iterate_kernel(double* K, const double* deltaS, const double* theta, const long long size)
@@ -47,8 +49,7 @@ template<typename Func>
 __global__ void bodyforce_compute_kernel(double* GravityBase,const double* density, const double* H, const double* theta, const double g, const long long size, Func func)
 {
 	int i = blockIdx.x * blockDim.x + threadIdx.x;
-	if (i >= size)return;
-	GravityBase[i] = H[i] * density[i] * g * func(theta[i]);
+	if (i < size) GravityBase[i] = H[i] * density[i] * g * func(theta[i]);
 }
 
 __global__ void omega_iterate_kernel(double* omega, const double* Omega, const double* deltaS, const long long size)
@@ -66,17 +67,17 @@ extern "C"
 	void deltaS_iterate_gpu(double* deltaS_new, const double* deltaS_old, const double* velocity_old, const long long size, const double dt)
 	{
 		//cudaMemPrefetchAsync()
-		deltaS_iterate_kernel << <(size + 31) / 32, 32 >> > (deltaS_new,deltaS_old, velocity_old,size,dt);
+		deltaS_iterate_kernel << <(size +  threads - 1) / threads, threads >> > (deltaS_new,deltaS_old, velocity_old,size,dt);
 	}
 
 	void theta_iterate_gpu(double* theta_new, const double* theta_old, const double* omega_old, const long long size, const double dt)
 	{
-		theta_iterate_kernel << <(size + 31) / 32, 32 >> > (theta_new,theta_old,omega_old,size - 1,dt);
+		theta_iterate_kernel << <(size +  threads - 1) / threads, threads >> > (theta_new,theta_old,omega_old,size - 1,dt);
 	}
 
 	void H_iterate_gpu(double* H_new, const double* H_old, const double* Delta_old, const long long size, const double dt)
 	{
-		H_iterate_kernel << <(size + 31) / 32, 32 >> > (H_new, H_old, Delta_old, size, dt);
+		H_iterate_kernel << <(size +  threads - 1) / threads, threads >> > (H_new, H_old, Delta_old, size, dt);
 	}
 
 	void K_iterate_gpu(double* K, const double* deltaS, const double* theta, const long long size)
@@ -95,27 +96,27 @@ extern "C"
 			theta[size - 2] * (dS0 + dS1) / (dS0 * dS1) +
 			theta[size - 3] * (-dS0) / ((dS1 + dS0) * dS1);
 
-		K_iterate_kernel << <(size + 31) / 32, 32 >> > (K, deltaS, theta, size);
+		K_iterate_kernel << <(size +  threads - 1) / threads, threads >> > (K, deltaS, theta, size);
 	}
 
 	void bodyforce_compute_gpu(double* Gravity, double* GravityCos, double* GravitySin, const double* density, const double* H, const double* theta, const double g, const long long size)
 	{
-		bodyforce_compute_kernel << <(size + 31) / 32, 32 >> > (Gravity, density, H, theta, g, size, []__device__(double i) { return 1.0; });
-		bodyforce_compute_kernel << <(size + 31) / 32, 32 >> > (GravityCos, density, H, theta, g, size, [=] __device__(double i) { return cos(i); });
-		bodyforce_compute_kernel << <(size + 31) / 32, 32 >> > (GravitySin, density, H, theta, g, size, [=] __device__(double i) { return sin(i); });
+		bodyforce_compute_kernel << <(size +  threads - 1) / threads, threads >> > (Gravity, density, H, theta, g, size, []__device__(double i) { return 1.0; });
+		bodyforce_compute_kernel << <(size +  threads - 1) / threads, threads >> > (GravityCos, density, H, theta, g, size, [=] __device__(double i) { return cos(i); });
+		bodyforce_compute_kernel << <(size +  threads - 1) / threads, threads >> > (GravitySin, density, H, theta, g, size, [=] __device__(double i) { return sin(i); });
 	}
 
 	void omega_iterate_gpu(double* omega, const double* Omega, const double* deltaS, const long long size)
 	{
 		omega[size - 1] = 0.0;
 		omega[size - 2] = -(Omega[size - 1] + Omega[size - 2]) * deltaS[size - 1] / 2.0;
-		omega_iterate_kernel << <(size + 31) / 32, 32 >> > (omega, Omega, deltaS, size);
+		omega_iterate_kernel << <(size +  threads - 1) / threads, threads >> > (omega, Omega, deltaS, size);
 	}
 
 	void velocity_iterate_gpu(double* velocity, const double* Delta, const double* deltaS, const long long size)
 	{
 		velocity[size - 1] = 0.0;
 		velocity[size - 2] = (Delta[size - 1] + Delta[size - 2]) * deltaS[size - 1] / 2.0;
-		velocity_iterate_kernel << <(size + 31) / 32, 32 >> > (velocity, Delta, deltaS, size);
+		velocity_iterate_kernel << <(size +  threads - 1) / threads, threads >> > (velocity, Delta, deltaS, size);
 	}
 }
