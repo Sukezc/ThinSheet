@@ -19,12 +19,12 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="computeWidget.cpp" />
-    <ClCompile Include="element_handle.cpp" />
-    <ClCompile Include="element_iterate.cpp" />
-    <ClCompile Include="main.cpp">
+    <CudaCompile Include="computeWidget.cpp" />
+    <CudaCompile Include="element_handle.cpp" />
+    <CudaCompile Include="element_iterate.cpp" />
+    <CudaCompile Include="main.cpp">
       <FileType>CppCode</FileType>
-    </ClCompile>
+    </CudaCompile>
     <ClCompile Include="Parser.cpp" />
     <ClCompile Include="Xml.cpp" />
   </ItemGroup>
@@ -32,7 +32,7 @@
     <ClInclude Include="computeWidget.h" />
     <ClInclude Include="CudaAllocator.h" />
     <ClInclude Include="CusolverRfHandle.h" />
-    <ClInclude Include="CuVector.h" />
+    <CudaCompile Include="CuVector.h" />
     <ClInclude Include="element_iterate_gpu.h" />
     <ClInclude Include="ObjFactory.h" />
     <ClInclude Include="element_iterate.h" />
@@ -178,7 +178,7 @@
     <CudaCompile>
       <TargetMachinePlatform>64</TargetMachinePlatform>
       <AdditionalOptions>--extended-lambda %(AdditionalOptions)</AdditionalOptions>
-      <CodeGeneration>compute_61,sm_61</CodeGeneration>
+      <CodeGeneration>compute_52,sm_52</CodeGeneration>
     </CudaCompile>
     <PostBuildEvent>
       <Command>copy $(SolutionDir)$(Platform)\$(Configuration)\$(ProjectName).exe D:\CODE\FileWorking\auto</Command>

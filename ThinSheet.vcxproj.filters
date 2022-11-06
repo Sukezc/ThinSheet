@@ -21,23 +21,8 @@
     <ClCompile Include="Xml.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="computeWidget.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="element_iterate.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="element_handle.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="main.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="element_handle.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="CusolverSpHandle.h">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -71,12 +56,27 @@
     <ClInclude Include="element_iterate_gpu.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="CuVector.h">
+    <ClInclude Include="element_handle.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="element_iterate_gpu.cu">
+      <Filter>源文件</Filter>
+    </CudaCompile>
+    <CudaCompile Include="main.cpp">
+      <Filter>源文件</Filter>
+    </CudaCompile>
+    <CudaCompile Include="CuVector.h">
+      <Filter>头文件</Filter>
+    </CudaCompile>
+    <CudaCompile Include="element_handle.cpp">
+      <Filter>源文件</Filter>
+    </CudaCompile>
+    <CudaCompile Include="element_iterate.cpp">
+      <Filter>源文件</Filter>
+    </CudaCompile>
+    <CudaCompile Include="computeWidget.cpp">
       <Filter>源文件</Filter>
     </CudaCompile>
   </ItemGroup>

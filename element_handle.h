@@ -1,4 +1,7 @@
 #pragma once
+#include"model.h"
+#include"CuVector.h"
+
 #include<vector>
 #include<string>
 #include<fstream>
@@ -8,7 +11,7 @@
 #include<cmath>
 #include<iomanip>
 #include<iostream>
-#include"model.h"
+
 
 
 template<typename Type>
@@ -51,47 +54,47 @@ class ElementGroup
 public:
 	
 	//rate of bending
-	std::vector<double> OmegaGroup;
+	CuVector<double> OmegaGroup;
 
 	//rate of stretching
-	std::vector<double> DeltaGroup;
+	CuVector<double> DeltaGroup;
 
 	//rate of rotation
-	std::vector<double> omegaGroup;
+	CuVector<double> omegaGroup;
 
 	//curvature
-	std::vector<double> KGroup;
+	CuVector<double> KGroup;
 
 	//thickness of slab
-	std::vector<double> HGroup;
+	CuVector<double> HGroup;
 
 	//angle of slab
-	std::vector<double> thetaGroup;
+	CuVector<double> thetaGroup;
 
 	//Length element length
-	std::vector<double> deltaSGroup;
+	CuVector<double> deltaSGroup;
 
 	//velocity of the middle surface
-	std::vector<double> velocityGroup;
+	CuVector<double> velocityGroup;
 
 	//relative density related to the depth
-	std::vector<double> densityGroup;
+	CuVector<double> densityGroup;
 
 	//all the surface force 
-	std::vector<double> PupGroup;
-	std::vector<double> PdownGroup;
-	std::vector<double> TupGroup;
-	std::vector<double> TdownGroup;
+	CuVector<double> PupGroup;
+	CuVector<double> PdownGroup;
+	CuVector<double> TupGroup;
+	CuVector<double> TdownGroup;
 	
 	//all the bodyforce and bodyforce decompose
 
-	std::vector<double> GravityGroup;
-	std::vector<double> GravityGroupCos;
-	std::vector<double> GravityGroupSin;
+	CuVector<double> GravityGroup;
+	CuVector<double> GravityGroupCos;
+	CuVector<double> GravityGroupSin;
 	
 	//decribe the node space information
-	std::vector<double> XGroup;
-	std::vector<double> YGroup;
+	CuVector<double> XGroup;
+	CuVector<double> YGroup;
 
 	//describe the Torque
 	static std::vector<double> GravityTorqueGroup;
@@ -107,7 +110,9 @@ public:
 	double g;
 	double density;
 
-	static const size_t vector_num = 18;
+	static const size_t container_num = 18;
+
+	using container_type = CuVector<double>;
 
 public:
 
@@ -176,20 +181,20 @@ public:
 		const double thetaInterval = thetaGroup.back()/static_cast<double>(num_place);
 		for (int i = 0; i < num; i++)
 		{
-			OmegaGroup.emplace_back(OmegaGroup.back() - OmegaInterval);
-			DeltaGroup.emplace_back(DeltaGroup.back() - DeltaInterval);
-			omegaGroup.emplace_back(omegaGroup.back() - omegaInterval);
-			KGroup.emplace_back(0.0);
-			HGroup.emplace_back(H_value);
-			thetaGroup.emplace_back(thetaGroup.back() - thetaInterval);
-			deltaSGroup.emplace_back(deltaS_value);
-			velocityGroup.emplace_back(velocity_value);
-			densityGroup.emplace_back(density);
-			PupGroup.emplace_back(0.0); PdownGroup.emplace_back(0.0);
-			TupGroup.emplace_back(0.0); TdownGroup.emplace_back(0.0);
-			GravityGroup.emplace_back(0.0);
-			GravityGroupCos.emplace_back(0.0); GravityGroupSin.emplace_back(0.0);
-			XGroup.emplace_back(0.0); YGroup.emplace_back(0.0);
+			OmegaGroup.push_back(OmegaGroup.back() - OmegaInterval);
+			DeltaGroup.push_back(DeltaGroup.back() - DeltaInterval);
+			omegaGroup.push_back(omegaGroup.back() - omegaInterval);
+			KGroup.push_back(0.0);
+			HGroup.push_back(H_value);
+			thetaGroup.push_back(thetaGroup.back() - thetaInterval);
+			deltaSGroup.push_back(deltaS_value);
+			velocityGroup.push_back(velocity_value);
+			densityGroup.push_back(density);
+			PupGroup.push_back(0.0); PdownGroup.push_back(0.0);
+			TupGroup.push_back(0.0); TdownGroup.push_back(0.0);
+			GravityGroup.push_back(0.0);
+			GravityGroupCos.push_back(0.0); GravityGroupSin.push_back(0.0);
+			XGroup.push_back(0.0); YGroup.push_back(0.0);
 			slabLength += deltaS_value; size += 1;
 		}
 		
@@ -318,18 +323,19 @@ public:
 	{
 		std::ofstream outfileEg;
 		outfileEg.open(outfile_name, std::ios::binary | std::ios::out);
-		std::vector<double>::size_type BufferSize;
-		for (int i = 0; i < ElementGroup::vector_num; i++)
+		container_type::size_type BufferSize;
+		for (int i = 0; i < ElementGroup::container_num; i++)
 		{
-			std::vector<double>* p_vector = (std::vector<double>*)p_Egold + i;
+			
+			container_type* p_vector = (container_type*)p_Egold + i;
 			BufferSize = p_vector->size();
-			outfileEg.write((char*)&BufferSize, sizeof(std::vector<double>::size_type));
-			outfileEg.write((char*)p_vector->data(), sizeof(double) * BufferSize);
-			p_vector = (std::vector<double>*)p_Egnew + i;
-			outfileEg.write((char*)p_vector->data(), sizeof(double) * BufferSize);
+			outfileEg.write((char*)&BufferSize, sizeof(container_type::size_type));
+			outfileEg.write((char*)p_vector->data(), sizeof(container_type::value_type) * BufferSize);
+			p_vector = (container_type*)p_Egnew + i;
+			outfileEg.write((char*)p_vector->data(), sizeof(container_type::value_type) * BufferSize);
 		}
-		char* ret_old = (char*)((std::vector<double>*)p_Egold + ElementGroup::vector_num);
-		char* ret_new = (char*)((std::vector<double>*)p_Egnew + ElementGroup::vector_num);
+		char* ret_old = (char*)((container_type*)p_Egold + ElementGroup::container_num);
+		char* ret_new = (char*)((container_type*)p_Egnew + ElementGroup::container_num);
 		ptrdiff_t retbyte = (char*)(p_Egold + 1) - ret_old;
 		outfileEg.write(ret_old, retbyte);
 		outfileEg.write(ret_new, retbyte);
@@ -342,18 +348,18 @@ public:
 	{
 		std::ifstream infileEg; 
 		infileEg.open(infile_name, std::ios::binary | std::ios::in);
-		std::vector<double>::size_type BufferSize;
-		for (int i = 0; i < ElementGroup::vector_num; i++)
+		container_type::size_type BufferSize;
+		for (int i = 0; i < ElementGroup::container_num; i++)
 		{
 			infileEg.read((char*)&BufferSize, sizeof(BufferSize));
-			std::vector<double>* p_vector_old = (std::vector<double>*)p_Egold + i;
-			std::vector<double>* p_vector_new = (std::vector<double>*)p_Egnew + i;
+			container_type* p_vector_old = (container_type*)p_Egold + i;
+			container_type* p_vector_new = (container_type*)p_Egnew + i;
 			p_vector_old->resize(BufferSize); p_vector_new->resize(BufferSize);
-			infileEg.read((char*)p_vector_old->data(), sizeof(double) * BufferSize);
-			infileEg.read((char*)p_vector_new->data(), sizeof(double) * BufferSize);
+			infileEg.read((char*)p_vector_old->data(), sizeof(container_type::value_type) * BufferSize);
+			infileEg.read((char*)p_vector_new->data(), sizeof(container_type::value_type) * BufferSize);
 		}
-		char* ret_old = (char*)((std::vector<double>*)p_Egold + ElementGroup::vector_num);
-		char* ret_new = (char*)((std::vector<double>*)p_Egnew + ElementGroup::vector_num);
+		char* ret_old = (char*)((container_type*)p_Egold + ElementGroup::container_num);
+		char* ret_new = (char*)((container_type*)p_Egnew + ElementGroup::container_num);
 		ptrdiff_t retbyte = (char*)(p_Egold + 1) - ret_old;
 		infileEg.read(ret_old, retbyte);
 		infileEg.read(ret_new, retbyte);

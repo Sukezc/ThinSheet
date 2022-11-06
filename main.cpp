@@ -21,11 +21,18 @@ last modify date:2022.10.31
 #include<cstdlib>
 #include<ctime>
 #include<iostream>
-
+#include"CuVector.h"
 
 int main()
 {
 	
+	CuVector<int> a(10,10);
+	a.resize(10, 10);
+	a.erase(a.begin(), a.end());
+	//CuVector<int> a(10,1);
+	//a.resizeWithSend(20, 20);
+	//int i = thrust::count(a.begin(0), a.end(0), 1);
+	//for (auto it = test.begin(); it != test.end(); it++)cout << *it << std::endl;
 	return 0;
 }
 
