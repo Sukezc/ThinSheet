@@ -8,6 +8,7 @@
 #include<type_traits>
 #include<algorithm>
 #include"CudaAllocator.h"
+#include"CuVector.h"
 #include"SolverInterface.h"
 
 /*
@@ -38,17 +39,22 @@ public:
 	std::vector<int> csrColIndU;
 	std::vector<double> csrValU;
 
-	std::vector<int, CudaAllocator<int>> csrRowPtrA;
-	std::vector<int, CudaAllocator<int>> csrColIndA;
-	std::vector<double, CudaAllocator<double>> csrValA;
-
+	//std::vector<int, CudaAllocator<int>> csrRowPtrA;
+	//std::vector<int, CudaAllocator<int>> csrColIndA;
+	//std::vector<double, CudaAllocator<double>> csrValA;
+	CuVector<int> csrRowPtrA;
+	CuVector<int> csrColIndA;
+	CuVector<double> csrValA;
 
 	std::vector<char> buffer_cpu;
-	std::vector<double,CudaAllocator<double>> T;
+	CuVector<double> T;
+	//std::vector<double,CudaAllocator<double>> T;
 	//std::vector<double, CudaAllocator<double>> X;
 
-	std::vector<int,CudaAllocator<int>> P;
-	std::vector<int,CudaAllocator<int>> Q;
+	CuVector<int> P;
+	CuVector<int> Q;
+	//std::vector<int,CudaAllocator<int>> P;
+	//std::vector<int,CudaAllocator<int>> Q;
 
 	int n;
 	int nzero, nboost;
@@ -132,9 +138,9 @@ public:
 			P.data(),
 			Q.data(),
 			cusolverRfH));
-		checkCudaErrors(cudaDeviceSynchronize());
+		//checkCudaErrors(cudaDeviceSynchronize());
 		checkCudaErrors(cusolverRfAnalyze(cusolverRfH));
-		T.resize(n); X.resize(n);
+		T.resize(n); X.resize(n); P.send(); Q.send();
 	}
 
 	
@@ -142,27 +148,28 @@ public:
 	{
 		checkCudaErrors(cusolverRfRefactor(cusolverRfH));
 		checkCudaErrors(cudaDeviceSynchronize());
-		checkCudaErrors(cusolverRfSolve(cusolverRfH, P.data(), Q.data(), 1, T.data(), n, X.data(), n));
-		checkCudaErrors(cudaDeviceSynchronize());
+		checkCudaErrors(cusolverRfSolve(cusolverRfH, P.data(CuVecDev), Q.data(CuVecDev), 1, T.data(CuVecDev), n, X.data(CuVecDev), n));
+		X.fetch();
+		//checkCudaErrors(cudaDeviceSynchronize());
 	}
 
 	void loadB(const std::vector<double>& b)
 	{
-		std::copy(b.begin(), b.end(), X.begin());
+		thrust::copy(b.begin(), b.end(), X.begin(CuVecDev));
 	}
 	
 	void ResetA(const std::vector<double>& csrval, const std::vector<int>& csrrowptr, const std::vector<int>& csrcolind)
 	{
-		std::copy(csrval.begin(), csrval.end(), csrValA.begin());
-		std::copy(csrrowptr.begin(), csrrowptr.end(), csrRowPtrA.begin());
-		std::copy(csrcolind.begin(), csrcolind.end(), csrColIndA.begin());
+		thrust::copy(csrval.begin(), csrval.end(), csrValA.begin(CuVecDev));
+		thrust::copy(csrrowptr.begin(), csrrowptr.end(), csrRowPtrA.begin(CuVecDev));
+		thrust::copy(csrcolind.begin(), csrcolind.end(), csrColIndA.begin(CuVecDev));
 		checkCudaErrors(cusolverRfResetValues(
-			n, csrValA.size(),
-			csrRowPtrA.data(), csrColIndA.data(), csrValA.data(),
-			P.data(),
-			Q.data(),
+			n, csrValA.size(CuVecDev),
+			csrRowPtrA.data(CuVecDev), csrColIndA.data(CuVecDev), csrValA.data(CuVecDev),
+			P.data(CuVecDev),
+			Q.data(CuVecDev),
 			cusolverRfH));
-		checkCudaErrors(cudaDeviceSynchronize());
+		//checkCudaErrors(cudaDeviceSynchronize());
 	}
 	
 	void Reset()

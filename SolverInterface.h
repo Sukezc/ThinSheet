@@ -1,6 +1,6 @@
 #pragma once
 #include<vector>
-#include"CudaAllocator.h"
+#include"CuVector.h"
 class SolverInterface
 {
 public:
@@ -11,6 +11,6 @@ public:
 	virtual void loadB(const std::vector<double>& b) = 0;
 	virtual void ResetA(const std::vector<double>& csrval, const std::vector<int>& csrrowptr, const std::vector<int>& csrcolind) = 0;
 	virtual void Reset() = 0;
-	std::vector<double, CudaAllocator<double>> X;
+	CuVector<double> X;
 };
 
