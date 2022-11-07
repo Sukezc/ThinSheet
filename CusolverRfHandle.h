@@ -7,7 +7,6 @@
 #include<vector>
 #include<type_traits>
 #include<algorithm>
-#include"CudaAllocator.h"
 #include"CuVector.h"
 #include"SolverInterface.h"
 
@@ -21,7 +20,6 @@ class CusolverRfHandle : public SolverInterface
 {
 public:
 
-
 	cusolverRfHandle_t cusolverRfH;
 	cusolverSpHandle_t cusolverSpH;
 	cusparseMatDescr_t descrA;
@@ -30,7 +28,6 @@ public:
 
 public:
 
-	
 	std::vector<int> csrRowPtrL;
 	std::vector<int> csrColIndL;
 	std::vector<double> csrValL;
@@ -147,7 +144,7 @@ public:
 	void solve()
 	{
 		checkCudaErrors(cusolverRfRefactor(cusolverRfH));
-		checkCudaErrors(cudaDeviceSynchronize());
+		//checkCudaErrors(cudaDeviceSynchronize());
 		checkCudaErrors(cusolverRfSolve(cusolverRfH, P.data(CuVecDev), Q.data(CuVecDev), 1, T.data(CuVecDev), n, X.data(CuVecDev), n));
 		X.fetch();
 		//checkCudaErrors(cudaDeviceSynchronize());

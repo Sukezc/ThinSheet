@@ -208,3 +208,13 @@ void computeCriticalAngleRegressionBasedOnInnerProduct(const std::string& filena
 		}
 	}
 }
+
+void computeCreateAngleInitalFile(double Angle)
+{
+
+}
+
+void computeLoadAngleInitalFile(const std::string& FileName)
+{
+
+}

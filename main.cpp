@@ -23,41 +23,41 @@ last modify date:2022.10.31
 #include<iostream>
 #include"CuVector.h"
 
-int main()
-{
-	
-	//CuVector<int> a(10,10);
-	//a.resize(10, 10);
-	//a.erase(a.begin(), a.end());
-	////CuVector<int> a(10,1);
-	////a.resizeWithSend(20, 20);
-	////int i = thrust::count(a.begin(0), a.end(0), 1);
-	////for (auto it = test.begin(); it != test.end(); it++)cout << *it << std::endl;
-	//return 0;
+//int main()
+//{
+//	
+//	//CuVector<int> a(10,10);
+//	//a.resize(10, 10);
+//	//a.erase(a.begin(), a.end());
+//	////CuVector<int> a(10,1);
+//	////a.resizeWithSend(20, 20);
+//	////int i = thrust::count(a.begin(0), a.end(0), 1);
+//	////for (auto it = test.begin(); it != test.end(); it++)cout << *it << std::endl;
+//	//return 0;
+//
+//	CusolverRfHandle solver;
+//	std::vector<int> csrrowptrA = {0,2,5,7,9};
+//	std::vector<int> csrcolindA = {0,3,1,2,3,0,1,2,3};
+//	std::vector<double> csrvalA = {1,2,3,4,1,1,2,1,2};
+//	std::vector<double> b = { 1,2,3,4 };
+//	solver.Initialize(csrvalA, csrrowptrA, csrcolindA);
+//	solver.loadB(b);
+//	solver.solve();
+//	csrvalA = { 1,2,3,4,1,1,2,10,12 };
+//	solver.ResetA(csrvalA, csrrowptrA, csrcolindA);
+//	solver.loadB(b);
+//	solver.solve();
+//	solver.Reset();
+//	solver.Initialize(csrvalA, csrrowptrA, csrcolindA);
+//	solver.loadB(b);
+//	solver.solve();
+//	for (auto& i : solver.X.h_vector)std::cout << i << std::endl;
+//
+//	return 0;
+//}
 
-	CusolverRfHandle solver;
-	std::vector<int> csrrowptrA = {0,2,5,7,9};
-	std::vector<int> csrcolindA = {0,3,1,2,3,0,1,2,3};
-	std::vector<double> csrvalA = {1,2,3,4,1,1,2,1,2};
-	std::vector<double> b = { 1,2,3,4 };
-	solver.Initialize(csrvalA, csrrowptrA, csrcolindA);
-	solver.loadB(b);
-	solver.solve();
-	csrvalA = { 1,2,3,4,1,1,2,10,12 };
-	solver.ResetA(csrvalA, csrrowptrA, csrcolindA);
-	solver.loadB(b);
-	solver.solve();
-	solver.Reset();
-	solver.Initialize(csrvalA, csrrowptrA, csrcolindA);
-	solver.loadB(b);
-	solver.solve();
-	for (auto& i : solver.X.h_vector)std::cout << i << std::endl;
 
-	return 0;
-}
-
-
-int mn(int argc, char* argv[])
+int main(int argc, char* argv[])
 {
 	ModelConf model;
 	if (argc != 2) 

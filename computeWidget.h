@@ -11,3 +11,5 @@ void computeInnerProductRegression(bool saveOrNot, std::pair<double, double>& da
 void computeCriticalAngleRegressionBasedOnInnerProduct(const std::string& configuration, std::pair<double, double>& dampRate_innerProduct, ElementGroup& Egold, ElementGroup& Egnew, SolverInterface* SolverHandle, ModelConf& model);
 
 void computeCreateAngleInitalFile(double Angle);
+
+void computeLoadAngleInitalFile(const std::string& FileName);
