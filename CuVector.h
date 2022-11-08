@@ -3,6 +3,7 @@
 #include <device_launch_parameters.h>
 #include<thrust/host_vector.h>
 #include<thrust/device_vector.h>
+#include<type_traits>
 
 #define EXPAND(x) x
 
@@ -38,127 +39,184 @@
 	className& operator=(className&& other) = default;
 
 
-#define CUVECTOR_CLASS_BEGIN(dataType) \
-template<typename dataType> \
-class CuVector \
-{ \
-public: \
-	thrust::host_vector<dataType> h_vector; \
-	thrust::device_vector<dataType> d_vector;\
-public: \
-	CLASS_DEFAULT_CONSTRUCT(CuVector)\
-	template<typename ... Args>\
-	CuVector(Args&&... args) {\
-		h_vector = thrust::host_vector<dataType>(std::forward<Args>(args)...);\
-		d_vector = h_vector;\
-	}\
-	\
-	void send(){ \
-		d_vector = h_vector;\
-	}\
-	\
-	void fetch(){ \
-		h_vector = d_vector;\
-	}\
-	\
-	using value_type = dataType;\
-	using size_type = size_t;
-
-
-#define CUVECTOR_CREATE_EMPTY_FUNCTION_BIND(function,method) \
-	void function() { \
-		h_vector.method();\
-		d_vector.method();\
-}
-
-
-#define CUVECTOR_CREATE_FUNCTION_BIND(function,method, ...) \
-    void function(PASTE(PARAMETER_EXPAND_,COUNT_ARGS(__VA_ARGS__) (UNPAIR,__VA_ARGS__))) {\
-		h_vector.method(PASTE(PARAMETER_EXPAND_,COUNT_ARGS(__VA_ARGS__) (STRIP,__VA_ARGS__)));\
-		d_vector.method(PASTE(PARAMETER_EXPAND_,COUNT_ARGS(__VA_ARGS__) (STRIP,__VA_ARGS__)));\
-}
-
-#define CUVECTOR_CREATE_EMPTY_FUNCTION_BEGIN(function, returnType) \
-	returnType function(){
-
-#define CUVECTOR_CREATE_FUNCTION_BEGIN(function, returnType,...) \
-	returnType function(PASTE(PARAMETER_EXPAND_,COUNT_ARGS(__VA_ARGS__) (UNPAIR,__VA_ARGS__))){
-
-#define TEMPLATE_BEGIN template<
-#define TEMPLATE_END >
-#define TYPENAME(type) typename type
-
-#define CUVECTOR_CREATE_FUNCTION_END(...) }
-
-#define CUVECTOR_CLASS_END(...) };
+//#define CUVECTOR_CLASS_BEGIN(dataType) \
+//template<typename dataType> \
+//class CuVector \
+//{ \
+//public: \
+//	thrust::host_vector<dataType> h_vector; \
+//	thrust::device_vector<dataType> d_vector;\
+//public: \
+//	CLASS_DEFAULT_CONSTRUCT(CuVector)\
+//	template<typename ... Args>\
+//	CuVector(Args&&... args) {\
+//		h_vector = thrust::host_vector<dataType>(std::forward<Args>(args)...);\
+//		d_vector = h_vector;\
+//	}\
+//	\
+//	void send(){ \
+//		d_vector = h_vector;\
+//	}\
+//	\
+//	void fetch(){ \
+//		h_vector = d_vector;\
+//	}\
+//	\
+//	using value_type = dataType;\
+//	using size_type = size_t;
+//
+//
+//#define CUVECTOR_CREATE_EMPTY_FUNCTION_BIND(function,method) \
+//	void function() { \
+//		h_vector.method();\
+//		d_vector.method();\
+//}
+//
+//
+//#define CUVECTOR_CREATE_FUNCTION_BIND(function,method, ...) \
+//    void function(PASTE(PARAMETER_EXPAND_,COUNT_ARGS(__VA_ARGS__) (UNPAIR,__VA_ARGS__))) {\
+//		h_vector.method(PASTE(PARAMETER_EXPAND_,COUNT_ARGS(__VA_ARGS__) (STRIP,__VA_ARGS__)));\
+//		d_vector.method(PASTE(PARAMETER_EXPAND_,COUNT_ARGS(__VA_ARGS__) (STRIP,__VA_ARGS__)));\
+//}
+//
+//#define CUVECTOR_CREATE_EMPTY_FUNCTION_BEGIN(function, returnType) \
+//	returnType function(){
+//
+//#define CUVECTOR_CREATE_FUNCTION_BEGIN(function, returnType,...) \
+//	returnType function(PASTE(PARAMETER_EXPAND_,COUNT_ARGS(__VA_ARGS__) (UNPAIR,__VA_ARGS__))){
+//
+//#define TEMPLATE_BEGIN template<
+//#define TEMPLATE_END >
+//#define TYPENAME(type) typename type
+//
+//#define CUVECTOR_CREATE_FUNCTION_END(...) }
+//
+//#define CUVECTOR_CLASS_END(...) };
+//
+//
+////CUVECTOR_CREATE_FUNCTION_BEGIN()
+//// 
+////CUVECTOR_CREATE_FUNCTION_END()
 
 #define CuVecDev ((int)0)
 
-CUVECTOR_CLASS_BEGIN(dataType)
+template<typename dataType> 
+class CuVector
+{
+public:
+	thrust::host_vector<dataType> Hvec;
+	thrust::device_vector<dataType> Dvec;
+public:
+	CLASS_DEFAULT_CONSTRUCT(CuVector)
+		template<typename ... Args>
+	CuVector(Args&&... args) {
+		Hvec = thrust::host_vector<dataType>(std::forward<Args>(args)...);
+		Dvec.resize(Hvec.size());
+	}
 
-CUVECTOR_CREATE_FUNCTION_BIND(resize,resize,(size_t) size)
+	using value_type = dataType;
+	using size_type = size_t;
 
-CUVECTOR_CREATE_FUNCTION_BIND(resize ,resize,(size_t) size,(const dataType&) vals)
+	void send() {
+		Dvec = Hvec;
+	}
 
-CUVECTOR_CREATE_FUNCTION_BEGIN(data, dataType*, (int))
-return d_vector.data().get();
-CUVECTOR_CREATE_FUNCTION_END(data)
 
-CUVECTOR_CREATE_EMPTY_FUNCTION_BEGIN(data, dataType*)
-return h_vector.data();
-CUVECTOR_CREATE_FUNCTION_END(data)
+	void fetch() {
+		Hvec = Dvec;
+	}
 
-CUVECTOR_CREATE_FUNCTION_BEGIN(operator[], dataType&, (size_t) pos)
-return h_vector[pos];
-CUVECTOR_CREATE_FUNCTION_END(operator[])
+	template<typename Iterator1, typename Iterater2>
+	void trans(Iterator1 input1, Iterator1 input2, Iterater2 output)
+	{
+		if constexpr (!std::is_pod_v<input1>) thrust::copy(input1, input2, ouput);
+		else thrust::copy(input1, input2, ouput);
+	}
 
-CUVECTOR_CREATE_EMPTY_FUNCTION_BEGIN(begin, auto)
-return h_vector.begin();
-CUVECTOR_CREATE_FUNCTION_END(begin)
+	void resize(size_type size)
+	{
+		Hvec.resize(size);
+		Dvec.resize(size);
+	}
 
-CUVECTOR_CREATE_EMPTY_FUNCTION_BEGIN(end, auto)
-return h_vector.end();
-CUVECTOR_CREATE_FUNCTION_END(end)
+	void resize(size_type size, const dataType& vals)
+	{
+		Hvec.resize(size, vals);
+		Dvec.resize(size, vals);
+	}
 
-CUVECTOR_CREATE_FUNCTION_BEGIN(begin, auto, (int))
-return d_vector.begin();
-CUVECTOR_CREATE_FUNCTION_END(begin)
+	dataType* data() noexcept
+	{
+		return Hvec.data();
+	}
 
-CUVECTOR_CREATE_FUNCTION_BEGIN(end, auto, (int))
-return d_vector.end();
-CUVECTOR_CREATE_FUNCTION_END(end)
+	dataType* data(int) noexcept
+	{
+		return Dvec.data().get();
+	}
 
-CUVECTOR_CREATE_EMPTY_FUNCTION_BEGIN(size, size_t)
-return h_vector.size();
-CUVECTOR_CREATE_FUNCTION_END(size)
+	dataType& operator[](size_type pos)
+	{
+		return Hvec[pos];
+	}
 
-CUVECTOR_CREATE_FUNCTION_BEGIN(size, size_t,(int))
-return d_vector.size();
-CUVECTOR_CREATE_FUNCTION_END(size)
+	auto begin() noexcept
+	{
+		return Hvec.begin();
+	}
 
-CUVECTOR_CREATE_FUNCTION_BEGIN(push_back, void,(const dataType&) vals)
-h_vector.push_back(vals);
-CUVECTOR_CREATE_FUNCTION_END(push_back)
+	auto end() noexcept
+	{
+		return Hvec.end();
+	}
 
-CUVECTOR_CREATE_EMPTY_FUNCTION_BEGIN(back, dataType&)
-return h_vector.back();
-CUVECTOR_CREATE_FUNCTION_END(back)
+	auto begin(int) noexcept
+	{
+		return Dvec.begin();
+	}
 
-CUVECTOR_CREATE_EMPTY_FUNCTION_BEGIN(clear, void)
-h_vector.clear();
-CUVECTOR_CREATE_FUNCTION_END(clear)
+	auto end(int) noexcept
+	{
+		return Dvec.end();
+	}
 
-TEMPLATE_BEGIN TYPENAME(Iterator) TEMPLATE_END
-CUVECTOR_CREATE_FUNCTION_BEGIN(erase, auto, (Iterator) left, (Iterator) right)
-return h_vector.erase(left, right);
-CUVECTOR_CREATE_FUNCTION_END(erase)
+	size_type size() noexcept
+	{
+		return Hvec.size();
+	}
 
-CUVECTOR_CREATE_EMPTY_FUNCTION_BEGIN(erase,auto)
-return h_vector.erase(h_vector.begin(), h_vector.end());
-CUVECTOR_CREATE_FUNCTION_END(erase)
+	size_type size(int) noexcept
+	{
+		return Dvec.size();
+	}
 
-CUVECTOR_CLASS_END(dataType)
+	void push_back(const dataType& vals)
+	{
+		Hvec.push_back(vals);
+	}
 
-//CUVECTOR_CREATE_FUNCTION_BEGIN()
-// 
-//CUVECTOR_CREATE_FUNCTION_END()
+	dataType& back()
+	{
+		return Hvec.back();
+	}
+
+	void clear() noexcept
+	{
+		Hvec.clear();
+	}
+
+
+	template<typename Iterater>
+	Iterater erase(Iterater left, Iterater right)
+	{
+		return Hvec.erase(left, right);
+	}
+
+	auto erase()
+	{
+		return Hvec.erase(Hvec.begin(), Hvec.end());
+	}
+
+
+
+};
