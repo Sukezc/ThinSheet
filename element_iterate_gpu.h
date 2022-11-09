@@ -15,8 +15,10 @@ void K_iterate_gpu(ElementGroup& Egnew);
 
 //void density_iterate(ElementGroup&);
 
-void bodyforce_compute_gpu(ElementGroup& Egnew,ModelConf& model);
+void bodyforce_compute_gpu(ElementGroup& Egnew);
 
-void omega_velocity_iterate_gpu(ElementGroup& Egnew);
+void bodyforce_K_synchronize(ElementGroup& Egnew);
+
+void omega_velocity_iterate_gpu(ElementGroup& Egnew, ModelConf& model);
 
 }

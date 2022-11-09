@@ -145,26 +145,26 @@ public:
 	{
 		checkCudaErrors(cusolverRfRefactor(cusolverRfH));
 		//checkCudaErrors(cudaDeviceSynchronize());
-		checkCudaErrors(cusolverRfSolve(cusolverRfH, P.data(CuVecDev), Q.data(CuVecDev), 1, T.data(CuVecDev), n, X.data(CuVecDev), n));
+		checkCudaErrors(cusolverRfSolve(cusolverRfH, P.data(CVD), Q.data(CVD), 1, T.data(CVD), n, X.data(CVD), n));
 		X.fetch();
 		//checkCudaErrors(cudaDeviceSynchronize());
 	}
 
 	void loadB(const std::vector<double>& b)
 	{
-		thrust::copy(b.begin(), b.end(), X.begin(CuVecDev));
+		thrust::copy(b.begin(), b.end(), X.begin(CVD));
 	}
 	
 	void ResetA(const std::vector<double>& csrval, const std::vector<int>& csrrowptr, const std::vector<int>& csrcolind)
 	{
-		thrust::copy(csrval.begin(), csrval.end(), csrValA.begin(CuVecDev));
-		thrust::copy(csrrowptr.begin(), csrrowptr.end(), csrRowPtrA.begin(CuVecDev));
-		thrust::copy(csrcolind.begin(), csrcolind.end(), csrColIndA.begin(CuVecDev));
+		thrust::copy(csrval.begin(), csrval.end(), csrValA.begin(CVD));
+		thrust::copy(csrrowptr.begin(), csrrowptr.end(), csrRowPtrA.begin(CVD));
+		thrust::copy(csrcolind.begin(), csrcolind.end(), csrColIndA.begin(CVD));
 		checkCudaErrors(cusolverRfResetValues(
-			n, csrValA.size(CuVecDev),
-			csrRowPtrA.data(CuVecDev), csrColIndA.data(CuVecDev), csrValA.data(CuVecDev),
-			P.data(CuVecDev),
-			Q.data(CuVecDev),
+			n, csrValA.size(CVD),
+			csrRowPtrA.data(CVD), csrColIndA.data(CVD), csrValA.data(CVD),
+			P.data(CVD),
+			Q.data(CVD),
 			cusolverRfH));
 		//checkCudaErrors(cudaDeviceSynchronize());
 	}

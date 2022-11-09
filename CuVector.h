@@ -99,6 +99,7 @@
 ////CUVECTOR_CREATE_FUNCTION_END()
 
 #define CuVecDev ((int)0)
+#define CVD CuVecDev
 struct HostToDevice {};
 struct DeviceToHost {};
 
@@ -191,6 +192,26 @@ public:
 	auto end(int) noexcept
 	{
 		return Dvec.end();
+	}
+
+	auto rbegin() noexcept
+	{
+		return Hvec.rbegin();
+	}
+
+	auto rend() noexcept
+	{
+		return Hvec.rend();
+	}
+
+	auto rbegin(int) noexcept
+	{
+		return Dvec.rbegin();
+	}
+
+	auto rend(int) noexcept
+	{
+		return Dvec.rend();
 	}
 
 	size_type size() noexcept
