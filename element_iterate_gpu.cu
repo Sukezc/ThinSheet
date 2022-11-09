@@ -2,7 +2,11 @@
 #include<device_launch_parameters.h>
 #include<sm_60_atomic_functions.h>
 #include"element_iterate_gpu.h"
+#include<thrust/device_vector.h>
+#include<thrust/execution_policy.h>
+#include<thrust/transform_scan.h>
 #include<cmath>
+
 
 constexpr int threads = 128;
 
@@ -52,32 +56,42 @@ __global__ void bodyforce_compute_kernel(double* GravityBase,const double* densi
 	if (i < size) GravityBase[i] = H[i] * density[i] * g * func(theta[i]);
 }
 
-__global__ void omega_iterate_kernel(double* omega, const double* Omega, const double* deltaS, const long long size)
+__global__ void omega_iterate_kernel(double* omega, double* omega_local, const double* Omega, const double* deltaS,const long long size)
 {
+	int i = blockDim.x * blockIdx.x + threadIdx.x;
 
 }
 
-__global__ void velocity_iterate_kernel(double* velocity, const double* Delta, const double* deltaS, const long long size)
+__global__ void velocity_iterate_kernel(double* velocity, double* velocity_local,const double* Delta, const double* deltaS, const long long size)
 {
+	int i = blockDim.x * blockIdx.x + threadIdx.x;
 
 }
 
 extern "C"
 {
-	void deltaS_iterate_gpu(double* deltaS_new, const double* deltaS_old, const double* velocity_old, const long long size, const double dt)
+	void deltaS_iterate_gpu(ElementGroup& Egold,ElementGroup& Egnew,const double dt)
 	{
-		//cudaMemPrefetchAsync()
-		deltaS_iterate_kernel << <(size +  threads - 1) / threads, threads >> > (deltaS_new,deltaS_old, velocity_old,size,dt);
+		Egold.deltaSGroup.send(); Egold.velocityGroup.send();
+		deltaS_iterate_kernel << <(size +  threads - 1) / threads, threads >> > (Egnew.deltaSGroup.data(CuVecDev),Egold.deltaSGroup.data(CuVecDev), Egold.velocityGroup.data(CuVecDev),Egold.size,dt);
 	}
 
-	void theta_iterate_gpu(double* theta_new, const double* theta_old, const double* omega_old, const long long size, const double dt)
+	void theta_iterate_gpu(ElementGroup& Egold, ElementGroup& Egnew, const double dt)
 	{
-		theta_iterate_kernel << <(size +  threads - 1) / threads, threads >> > (theta_new,theta_old,omega_old,size - 1,dt);
+		Egold.thetaGroup.send(); Egold.omegaGroup.send();
+		theta_iterate_kernel << <(size +  threads - 1) / threads, threads >> > (Egnew.thetaGroup.data(CuVecDev),Egold.thetaGroup.data(CuVecDev),Egold.omegaGroup.data(CuVecDev),Egold.size - 1,dt);
 	}
 
-	void H_iterate_gpu(double* H_new, const double* H_old, const double* Delta_old, const long long size, const double dt)
+	void H_iterate_gpu(ElementGroup& Egold, ElementGroup& Egnew,const double dt)
 	{
-		H_iterate_kernel << <(size +  threads - 1) / threads, threads >> > (H_new, H_old, Delta_old, size, dt);
+		Egold.HGroup.send(); Egold.DeltaGroup.send();
+		H_iterate_kernel << <(size +  threads - 1) / threads, threads >> > (Egnew.HGroup.data(CuVecDev), Egold.HGroup.data(CuVecDev), Egold.DeltaGroup.data(CuVecDev),Egold.size, dt);
+	}
+
+	void deltaS_theta_H_synchronize(ElementGroup& Egnew)
+	{
+		cudaDeviceSynchronize();
+		Egnew.deltaSGroup.fetch(); Egnew.thetaGroup.fetch(); Egnew.HGroup.fetch();
 	}
 
 	void K_iterate_gpu(double* K, const double* deltaS, const double* theta, const long long size)
@@ -106,17 +120,16 @@ extern "C"
 		bodyforce_compute_kernel << <(size +  threads - 1) / threads, threads >> > (GravitySin, density, H, theta, g, size, [=] __device__(double i) { return sin(i); });
 	}
 
-	void omega_iterate_gpu(double* omega, const double* Omega, const double* deltaS, const long long size)
+	void omega_velocity_iterate_gpu(double* omega, double omega_local, double* velocity, double* velocity_local, const double* Omega, const double* Delta, const double* deltaS, const long long size)
 	{
 		omega[size - 1] = 0.0;
 		omega[size - 2] = -(Omega[size - 1] + Omega[size - 2]) * deltaS[size - 1] / 2.0;
-		omega_iterate_kernel << <(size +  threads - 1) / threads, threads >> > (omega, Omega, deltaS, size);
-	}
-
-	void velocity_iterate_gpu(double* velocity, const double* Delta, const double* deltaS, const long long size)
-	{
 		velocity[size - 1] = 0.0;
 		velocity[size - 2] = (Delta[size - 1] + Delta[size - 2]) * deltaS[size - 1] / 2.0;
-		velocity_iterate_kernel << <(size +  threads - 1) / threads, threads >> > (velocity, Delta, deltaS, size);
+		omega_iterate_kernel << <(size + threads - 1) / threads, threads >> > (omega,omega_local,Omega,deltaS, size);
+		velocity_iterate_kernel << <(size + threads - 1) / threads, threads >> > (velocity,velocity_local,Delta, deltaS,size);
+		cudaDeviceSynchronize();
+
 	}
+
 }

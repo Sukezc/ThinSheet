@@ -99,10 +99,12 @@
 ////CUVECTOR_CREATE_FUNCTION_END()
 
 #define CuVecDev ((int)0)
+struct HostToDevice {};
+struct DeviceToHost {};
 
 template<typename dataType> 
 class CuVector
-{
+{	
 public:
 	thrust::host_vector<dataType> Hvec;
 	thrust::device_vector<dataType> Dvec;
@@ -129,8 +131,19 @@ public:
 	template<typename Iterator1, typename Iterater2>
 	void trans(Iterator1 input1, Iterator1 input2, Iterater2 output)
 	{
-		if constexpr (!std::is_pod_v<input1>) thrust::copy(input1, input2, ouput);
-		else thrust::copy(input1, input2, ouput);
+		thrust::copy(input1, input2, output);
+	}
+
+	template<typename KeyType>
+	void trans(KeyType input1, KeyType input2, KeyType output,HostToDevice)
+	{
+		thrust::copy(Hvec.begin() + input1, Hvec.begin() + input2, Dvec.begin() + output);
+	}
+
+	template<typename KeyType>
+	void trans(KeyType input1, KeyType input2, KeyType output, DeviceToHost)
+	{
+		thrust::copy(Dvec.begin() + input1, Dvec.begin() + input2, Hvec.begin() + output);
 	}
 
 	void resize(size_type size)
@@ -217,6 +230,13 @@ public:
 		return Hvec.erase(Hvec.begin(), Hvec.end());
 	}
 
+	void SyncSize(HostToDevice)
+	{
+		Dvec.resize(Hvec.size());
+	}
 
-
+	void SyncSize(DeviceToHost)
+	{
+		Hvec.resize(Dvec.size());
+	}
 };
