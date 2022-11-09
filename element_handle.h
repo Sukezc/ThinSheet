@@ -52,12 +52,6 @@ used for information integration
 class ElementGroup
 {
 public:
-	
-	//rate of bending
-	CuVector<double> OmegaGroup;
-
-	//rate of stretching
-	CuVector<double> DeltaGroup;
 
 	//rate of rotation
 	CuVector<double> omegaGroup;
@@ -95,6 +89,12 @@ public:
 	//decribe the node space information
 	CuVector<double> XGroup;
 	CuVector<double> YGroup;
+
+	//rate of bending
+	CuVector<double> OmegaGroup;
+
+	//rate of stretching
+	CuVector<double> DeltaGroup;
 
 	//describe the Torque
 	static std::vector<double> GravityTorqueGroup;

@@ -56,6 +56,18 @@ last modify date:2022.10.31
 //	return 0;
 //}
 
+#include<thrust/execution_policy.h>
+//int main()
+//{
+//	std::vector<int> temp{ 1,2,3,4,5 };
+//	thrust::device_vector<int> a(temp.begin(),temp.end());
+//	//thrust::device_vector<int> b(temp.rbegin(),temp.rend());
+//	thrust::reverse(a.begin(), a.end());
+//	//thrust::transform(thrust::device,a.begin(), a.end(), b.begin(), a.rbegin(), []__device__(auto & it1, auto & it2) { return it1 - it2; });
+//	for (int i = 0; i < 5; i++)std::cout << a[i] << std::endl;
+//	
+//	return 0;
+//}
 
 int main(int argc, char* argv[])
 {
@@ -103,7 +115,6 @@ int main(int argc, char* argv[])
 	computeKernel(true, Egold, Egnew, SolverHandle, model,outfile_xy, outfile_force);
 	vector_save(ElementGroup::GravityTorqueGroup, outfile_Torque);
 	vector_save(ElementGroup::PforceTorqueGroup, outfile_Torque);
-	
 	delete SolverHandle;
 	return 0;
 

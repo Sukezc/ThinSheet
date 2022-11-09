@@ -260,4 +260,5 @@ public:
 	{
 		Hvec.resize(Dvec.size());
 	}
+
 };

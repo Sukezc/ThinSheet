@@ -434,27 +434,25 @@ void Omega_Delta_iterate(ElementGroup& eg,ModelConf& model, handle& SolverHandle
 	long long n = eg.size - 1;
 	static std::vector<double> vals;  static std::vector<double> b; static std::vector<int> rowPtr; static std::vector<int> colInd;
 
-	
-	if(model.boundaryCondition == BoundaryCondition::ClampedFree)
+	switch (model.boundaryCondition)
 	{
-		ClampedFree(eg, vals, rowPtr, colInd);
+	case BoundaryCondition::ClampedFree:
+		ClampedFree(eg, vals, rowPtr, colInd); break;
+	case BoundaryCondition::ClampedBoth:
+		ClampedBoth(eg, vals, rowPtr, colInd); break;
+	default:
+		break;
 	}
-	else if(model.boundaryCondition == BoundaryCondition::ClampedBoth)
+	switch (model.forceCondition)
 	{
-		ClampedBoth(eg, vals, rowPtr, colInd);
-	}
-	
-	if(model.forceCondition == ForceCondition::BodyForceOnly)
-	{
-		BodyForceOnly(eg, b);
-	}
-	else if(model.forceCondition == ForceCondition::SurfaceAndBodyForce)
-	{
-		SurfaceAndBodyForce(eg, b);
-	}
-	else if (model.forceCondition == ForceCondition::SurfaceForceOnly)
-	{
-		SurfaceForceOnly(eg, b);
+	case ForceCondition::BodyForceOnly:
+		BodyForceOnly(eg, b); break;
+	case ForceCondition::SurfaceAndBodyForce:
+		SurfaceAndBodyForce(eg, b); break;
+	case ForceCondition::SurfaceForceOnly:
+		SurfaceForceOnly(eg, b); break;
+	default:
+		break;
 	}
 
 
@@ -469,7 +467,7 @@ void Omega_Delta_iterate(ElementGroup& eg,ModelConf& model, handle& SolverHandle
 	}
 	SolverHandle->loadB(b);
 	SolverHandle->solve();
-
+	SolverHandle->X.fetch();
 	for (long long i = n; i >= 0; i--)
 	{
 		long long j = n - i; double H = eg.HGroup[i];

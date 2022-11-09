@@ -146,7 +146,7 @@ public:
 		checkCudaErrors(cusolverRfRefactor(cusolverRfH));
 		//checkCudaErrors(cudaDeviceSynchronize());
 		checkCudaErrors(cusolverRfSolve(cusolverRfH, P.data(CVD), Q.data(CVD), 1, T.data(CVD), n, X.data(CVD), n));
-		X.fetch();
+		//X.fetch();
 		//checkCudaErrors(cudaDeviceSynchronize());
 	}
 

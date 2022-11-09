@@ -1,10 +1,11 @@
+#include"element_iterate_gpu.h"
 #include<cuda_runtime.h>
 #include<device_launch_parameters.h>
 #include<sm_60_atomic_functions.h>
-#include"element_iterate_gpu.h"
 #include<thrust/device_vector.h>
 #include<thrust/execution_policy.h>
 #include<thrust/transform_scan.h>
+#include<thrust/reverse.h>
 #include<cmath>
 
 
@@ -56,34 +57,43 @@ __global__ void bodyforce_compute_kernel(double* GravityBase,const double* densi
 	if (i < size) GravityBase[i] = H[i] * density[i] * g * func(theta[i]);
 }
 
-__global__ void omega_iterate_kernel(double* omega, double* omega_local, const double* Omega, const double* deltaS,const long long size)
+__global__ void omega_iterate_kernel(double* omega, const double* Omega, const double* deltaS,const long long size)
 {
 	int i = blockDim.x * blockIdx.x + threadIdx.x;
+	if (i < size)
+	{
 
+	}
 }
 
-__global__ void velocity_iterate_kernel(double* velocity, double* velocity_local,const double* Delta, const double* deltaS, const long long size)
+__global__ void velocity_iterate_kernel(double* velocity,const double* Delta, const double* deltaS, const long long size)
 {
 	int i = blockDim.x * blockIdx.x + threadIdx.x;
+	if (i < size)
+	{
 
+	}
 }
 
 extern "C"
 {
 	void deltaS_iterate_gpu(ElementGroup& Egold,ElementGroup& Egnew,const double dt)
 	{
+		auto size = Egnew.size;
 		Egnew.deltaSGroup.SyncSize(HostToDevice()); Egold.deltaSGroup.send(); Egold.velocityGroup.send();
 		deltaS_iterate_kernel << <(size +  threads - 1) / threads, threads >> > (Egnew.deltaSGroup.data(CVD),Egold.deltaSGroup.data(CVD), Egold.velocityGroup.data(CVD),Egold.size,dt);
 	}
 
 	void theta_iterate_gpu(ElementGroup& Egold, ElementGroup& Egnew, const double dt)
 	{
+		auto size = Egnew.size;
 		Egnew.thetaGroup.SyncSize(HostToDevice()); Egold.thetaGroup.send(); Egold.omegaGroup.send();
 		theta_iterate_kernel << <(size +  threads - 1) / threads, threads >> > (Egnew.thetaGroup.data(CVD),Egold.thetaGroup.data(CVD),Egold.omegaGroup.data(CVD),Egold.size - 1,dt);
 	}
 
 	void H_iterate_gpu(ElementGroup& Egold, ElementGroup& Egnew,const double dt)
 	{
+		auto size = Egnew.size;
 		Egnew.HGroup.SyncSize(HostToDevice()); Egold.HGroup.send(); Egold.DeltaGroup.send();
 		H_iterate_kernel << <(size +  threads - 1) / threads, threads >> > (Egnew.HGroup.data(CVD), Egold.HGroup.data(CVD), Egold.DeltaGroup.data(CVD),Egold.size, dt);
 	}
@@ -118,6 +128,7 @@ extern "C"
 
 	void bodyforce_compute_gpu(ElementGroup& Egnew)
 	{
+		auto size = Egnew.size;
 		Egnew.GravityGroup.SyncSize(HostToDevice()); Egnew.GravityGroupCos.SyncSize(HostToDevice()); Egnew.GravityGroupSin.SyncSize(HostToDevice()); Egnew.densityGroup.SyncSize(HostToDevice());
 		bodyforce_compute_kernel << <(size +  threads - 1) / threads, threads >> > (Egnew.GravityGroup.data(CVD), Egnew.densityGroup.data(CVD), Egnew.HGroup.data(CVD), Egnew.thetaGroup.data(CVD), Egnew.g, Egnew.size, []__device__(double i) { return 1.0; });
 		bodyforce_compute_kernel << <(size +  threads - 1) / threads, threads >> > (Egnew.GravityGroupCos.data(CVD), Egnew.densityGroup.data(CVD), Egnew.HGroup.data(CVD), Egnew.thetaGroup.data(CVD), Egnew.g, Egnew.size, [=] __device__(double i) { return cos(i); });
@@ -130,17 +141,21 @@ extern "C"
 		Egnew.KGroup.trans(Egnew.KGroup.begin(CVD) + 1, Egnew.KGroup.end(CVD) - 1, Egnew.KGroup.begin() + 1); Egnew.GravityGroup.fetch(); Egnew.GravityGroupCos.fetch(); Egnew.GravityGroupSin.fetch();
 	}
 
-	void omega_velocity_iterate_gpu(ElementGroup& Egnew, ModelConf& model)
+	void omega_velocity_iterate_gpu(ElementGroup& Egnew, ModelConf& model,SolverInterface* handle)
 	{
 		auto size = Egnew.size;
+		Egnew.omegaGroup.SyncSize(HostToDevice());
+		Egnew.velocityGroup.SyncSize(HostToDevice());
 		Egnew.omegaGroup[size - 1] = 0.0;
 		Egnew.omegaGroup[size - 2] = -(Egnew.OmegaGroup[size - 1] + Egnew.OmegaGroup[size - 2]) * Egnew.deltaSGroup[size - 1] / 2.0;
 		Egnew.velocityGroup[size - 1] = 0.0;
 		Egnew.velocityGroup[size - 2] = (Egnew.DeltaGroup[size - 1] + Egnew.DeltaGroup[size - 2]) * Egnew.deltaSGroup[size - 1] / 2.0;
-		omega_iterate_kernel << <(size + threads - 1) / threads, threads >> > (Egnew.omegaGroup.data(CVD),Egnew.OmegaGroup.data(CVD),Egnew.deltaSGroup.data(CVD), size);
-		velocity_iterate_kernel << <(size + threads - 1) / threads, threads >> > (Egnew.velocityGroup.data(CVD),Egnew.DeltaGroup.data(CVD), Egnew.deltaSGroup.data(CVD),size);
+		thrust::reverse(thrust::device, handle->X.begin(CVD), handle->X.end(CVD));
+		thrust::transform(thrust::device, handle->X.begin(CVD), handle->X.begin(CVD) + size, Egnew.HGroup.begin(CVD), handle->X.begin(CVD), []__device__(auto & it1, auto & it2) { return it1 / it2; });
+		thrust::transform(thrust::device, handle->X.begin(CVD)+size, handle->X.end(CVD), Egnew.HGroup.begin(CVD), handle->X.begin(CVD)+size, []__device__(auto& it1, auto& it2) { return it1 / it2 / it2 / it2; });
+		omega_iterate_kernel << <(size + threads - 1) / threads, threads >> > (Egnew.omegaGroup.data(CVD),handle->X.data(CVD) + size,Egnew.deltaSGroup.data(CVD), size);
+		velocity_iterate_kernel << <(size + threads - 1) / threads, threads >> > (Egnew.velocityGroup.data(CVD),handle->X.data(CVD), Egnew.deltaSGroup.data(CVD),size);
 		cudaDeviceSynchronize();
-
 	}
 
 }
