@@ -72,19 +72,19 @@ extern "C"
 {
 	void deltaS_iterate_gpu(ElementGroup& Egold,ElementGroup& Egnew,const double dt)
 	{
-		Egold.deltaSGroup.send(); Egold.velocityGroup.send();
+		Egnew.deltaSGroup.SyncSize(HostToDevice()); Egold.deltaSGroup.send(); Egold.velocityGroup.send();
 		deltaS_iterate_kernel << <(size +  threads - 1) / threads, threads >> > (Egnew.deltaSGroup.data(CuVecDev),Egold.deltaSGroup.data(CuVecDev), Egold.velocityGroup.data(CuVecDev),Egold.size,dt);
 	}
 
 	void theta_iterate_gpu(ElementGroup& Egold, ElementGroup& Egnew, const double dt)
 	{
-		Egold.thetaGroup.send(); Egold.omegaGroup.send();
+		Egnew.thetaGroup.SyncSize(HostToDevice()); Egold.thetaGroup.send(); Egold.omegaGroup.send();
 		theta_iterate_kernel << <(size +  threads - 1) / threads, threads >> > (Egnew.thetaGroup.data(CuVecDev),Egold.thetaGroup.data(CuVecDev),Egold.omegaGroup.data(CuVecDev),Egold.size - 1,dt);
 	}
 
 	void H_iterate_gpu(ElementGroup& Egold, ElementGroup& Egnew,const double dt)
 	{
-		Egold.HGroup.send(); Egold.DeltaGroup.send();
+		Egnew.HGroup.SyncSize(HostToDevice()); Egold.HGroup.send(); Egold.DeltaGroup.send();
 		H_iterate_kernel << <(size +  threads - 1) / threads, threads >> > (Egnew.HGroup.data(CuVecDev), Egold.HGroup.data(CuVecDev), Egold.DeltaGroup.data(CuVecDev),Egold.size, dt);
 	}
 
@@ -92,6 +92,7 @@ extern "C"
 	{
 		cudaDeviceSynchronize();
 		Egnew.deltaSGroup.fetch(); Egnew.thetaGroup.fetch(); Egnew.HGroup.fetch();
+		Egnew.thetaGroup.back() = 0.0; Egnew.deltaSGroup[0] = Egnew.deltaSGroup[1];
 	}
 
 	void K_iterate_gpu(double* K, const double* deltaS, const double* theta, const long long size)
