@@ -15,13 +15,11 @@ last modify date:2022.10.31
 #include"element_handle.h"
 #include"CusolverSpHandle.h"
 #include"CusolverRfHandle.h"
-#include"element_iterate.h"
 #include"ObjFactory.h"
 #include"computeWidget.h"
 #include<cstdlib>
 #include<ctime>
 #include<iostream>
-#include"CuVector.h"
 
 //int main()
 //{
@@ -56,7 +54,6 @@ last modify date:2022.10.31
 //	return 0;
 //}
 
-#include<thrust/execution_policy.h>
 //int main()
 //{
 //	std::vector<int> temp{ 1,2,3,4,5 };
@@ -112,7 +109,7 @@ int main(int argc, char* argv[])
 	std::ofstream outfile_xy(dir + "/" + model.XYaddress);
 	std::ofstream outfile_force(dir + "/" + model.Forceaddress);
 	std::ofstream outfile_Torque(dir + "/" + model.Torqueaddress);
-	computeKernel(true, Egold, Egnew, SolverHandle, model,outfile_xy, outfile_force);
+	computeKernelGpu(true, Egold, Egnew, SolverHandle, model,outfile_xy, outfile_force);
 	vector_save(ElementGroup::GravityTorqueGroup, outfile_Torque);
 	vector_save(ElementGroup::PforceTorqueGroup, outfile_Torque);
 	delete SolverHandle;

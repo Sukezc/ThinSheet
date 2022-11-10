@@ -114,7 +114,7 @@ public:
 		template<typename ... Args>
 	CuVector(Args&&... args) {
 		Hvec = thrust::host_vector<dataType>(std::forward<Args>(args)...);
-		Dvec.resize(Hvec.size());
+		Dvec = Hvec;
 	}
 
 	using value_type = dataType;

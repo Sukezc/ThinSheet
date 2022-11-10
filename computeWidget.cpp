@@ -37,6 +37,61 @@ void computeKernel(bool saveFlag, ElementGroup& Egold, ElementGroup& Egnew, Solv
 	model.ResetGridAndIterating();
 }
 
+void computeKernelGpu(bool saveFlag, ElementGroup& Egold, ElementGroup& Egnew, SolverInterface* SolverHandle, ModelConf& model, std::ofstream& outfile_xy, std::ofstream& outfile_force)
+{
+	ElementGroup::InitializeTorqueGroup(model.num_iterate);
+	bool ResetMatrix;
+	Egold = ElementGroup(model); Egnew = ElementGroup(model);
+	for (int i = model.extrudepolicy.iterating; i < model.num_iterate; i++)
+	{
+		if (model.grid_num < 128)
+		{
+			ResetMatrix = Elongate(Egold, Egnew, model);
+			deltaS_iterate(Egold, Egnew, model.dt);
+			theta_iterate(Egold, Egnew, model.dt);
+			H_iterate(Egold, Egnew, model.dt);
+			K_iterate(Egnew);
+			density_iterate(Egnew, model);
+			bodyforce_compute(Egnew);
+			surface_force_iterate(Egnew, model, i);
+			Omega_Delta_iterate(Egnew, model, SolverHandle, ResetMatrix);
+			omega_iterate(Egnew, model);
+			velocity_iterate(Egnew, model);
+		}
+		else
+		{
+			ResetMatrix = Elongate(Egold, Egnew, model);
+			
+			deltaS_iterate_gpu(Egold, Egnew, model.dt);
+			theta_iterate_gpu(Egold, Egnew, model.dt);
+			H_iterate_gpu(Egold, Egnew, model.dt);
+			deltaS_theta_H_synchronize(Egnew);
+
+			K_iterate_gpu(Egnew);
+			density_iterate_gpu(Egnew, model);
+			bodyforce_compute_gpu(Egnew);
+			K_density_bodyforce_synchronize(Egnew);
+
+			surface_force_iterate(Egnew, model, i);
+			Omega_Delta_iterate_gpu(Egnew, model, SolverHandle, ResetMatrix);
+			omega_velocity_iterate_gpu(Egnew, model,SolverHandle);
+		}
+		//std::cout << Egnew.velocityGroup.back() << " " << Egnew.velocityGroup.Dvec.back() << std::endl;
+		if (model.SaveEveryXY)
+		{
+			Egnew.ComputeXY().ComputeGravityTorque(i).ComputePforceTorque(i);
+			if (saveFlag) Egnew.SaveXY(outfile_xy).SaveForce(outfile_force);
+		}
+		else if (!(i % (model.num_iterate / model.num_XY)))
+		{
+			Egnew.ComputeXY().ComputeGravityTorque(i).ComputePforceTorque(i);
+			if (saveFlag) Egnew.SaveXY(outfile_xy).SaveForce(outfile_force);
+		}
+		std::swap(Egold, Egnew);
+	}
+	model.ResetGridAndIterating();
+}
+
 
 void computeInnerProductRegression(bool saveOrNot, std::pair<double, double>& dampRate_innerProduct, ElementGroup& Egold, ElementGroup& Egnew, SolverInterface* SolverHandle, ModelConf& model, std::ofstream& outfile_xy, std::ofstream& outfile_force)
 { 

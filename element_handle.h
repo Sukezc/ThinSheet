@@ -1,7 +1,6 @@
 #pragma once
 #include"model.h"
 #include"CuVector.h"
-
 #include<vector>
 #include<string>
 #include<fstream>
@@ -54,25 +53,25 @@ class ElementGroup
 public:
 
 	//rate of rotation
-	CuVector<double> omegaGroup;
-
-	//curvature
-	CuVector<double> KGroup;
-
-	//thickness of slab
-	CuVector<double> HGroup;
-
-	//angle of slab
-	CuVector<double> thetaGroup;
-
-	//Length element length
-	CuVector<double> deltaSGroup;
+	CuVector<double> omegaGroup;//
 
 	//velocity of the middle surface
-	CuVector<double> velocityGroup;
+	CuVector<double> velocityGroup;//
+
+	//curvature
+	CuVector<double> KGroup;//
+
+	//thickness of slab
+	CuVector<double> HGroup;//
+
+	//angle of slab
+	CuVector<double> thetaGroup;//
+
+	//Length element length
+	CuVector<double> deltaSGroup;//
 
 	//relative density related to the depth
-	CuVector<double> densityGroup;
+	CuVector<double> densityGroup;//
 
 	//all the surface force 
 	CuVector<double> PupGroup;
@@ -82,9 +81,9 @@ public:
 	
 	//all the bodyforce and bodyforce decompose
 
-	CuVector<double> GravityGroup;
-	CuVector<double> GravityGroupCos;
-	CuVector<double> GravityGroupSin;
+	CuVector<double> GravityGroup;//
+	CuVector<double> GravityGroupCos;//
+	CuVector<double> GravityGroupSin;//
 	
 	//decribe the node space information
 	CuVector<double> XGroup;
