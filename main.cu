@@ -110,7 +110,7 @@ int main(int argc, char* argv[])
 	//std::ofstream outfile_force(dir + "/" + model.Forceaddress);
 	//std::ofstream outfile_Torque(dir + "/" + model.Torqueaddress);
 	//computeKernelGpu(true, Egold, Egnew, SolverHandle, model,outfile_xy, outfile_force);
-	computeCreateAngleInitalFile(60.0, 5e5, SolverHandle, model, "60.dat");
+	computeCreateAngleInitFile(60.0, 5e5, SolverHandle, model, "60.dat");
 	//vector_save(ElementGroup::GravityTorqueGroup, outfile_Torque);
 	//vector_save(ElementGroup::PforceTorqueGroup, outfile_Torque);
 	delete SolverHandle;
