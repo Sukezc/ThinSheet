@@ -99,7 +99,6 @@ int main(int argc, char* argv[])
 	std::string mkdir = "mkdir";
 	std::string copy = "cp";
 #endif // MY_WINDOWS
-
 	//std::pair<double, double> dampRate_innerProduct;
 	//computeCriticalAngleRegressionBasedOnInnerProduct(argv[1],dampRate_innerProduct,Egold,Egnew,SolverHandle,model);
 	//std::string dir = std::to_string(fabs(model.criticalangle));

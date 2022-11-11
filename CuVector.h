@@ -229,9 +229,19 @@ public:
 		Hvec.push_back(vals);
 	}
 
+	void push_back(const dataType& vals,int)
+	{
+		Dvec.push_back(vals);
+	}
+
 	dataType& back()
 	{
 		return Hvec.back();
+	}
+
+	auto back(int)
+	{
+		return Dvec.back();
 	}
 
 	void clear() noexcept

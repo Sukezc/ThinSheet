@@ -97,7 +97,6 @@ public:
 
 		P.resize(n); 	
 		Q.resize(n); 
-
 		checkCudaErrors(cusolverSpXcsrluAnalysisHost(cusolverSpH, n, csrValA.size(),descrA, csrRowPtrA.data(), csrColIndA.data(),info));
 		size_t size_internal, size_lu;
 		checkCudaErrors(cusolverSpDcsrluBufferInfoHost(cusolverSpH, n, csrValA.size(),descrA, csrValA.data(), csrRowPtrA.data(), 

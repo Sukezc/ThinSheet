@@ -168,6 +168,24 @@ public:
 	ElementGroup& operator=(const ElementGroup& Eg) = default;
 	ElementGroup& operator=(ElementGroup&& Eg) = default;
 
+	ElementGroup& sendAll()
+	{
+		container_type* ptr = (container_type*)this;
+		for (int i = 0; i < container_num; i++)
+		{
+			(ptr + i)->send();
+		}
+	}
+
+	ElementGroup& fetchAll()
+	{
+		container_type* ptr = (container_type*)this;
+		for (int i = 0; i < container_num; i++)
+		{
+			(ptr + i)->fetch();
+		}
+	}
+
 	ElementGroup& elongate(double deltaS_value, double H_value, double velocity_value,int num = 1)
 	{
 		if (num < 0) throw;
@@ -199,7 +217,38 @@ public:
 		
 		return *this;
 	}
+	
+	ElementGroup& elongateGpu(double deltaS_value, double H_value, double velocity_value, int num = 1)
+	{
+		if (num < 0) throw;
+		if (num == 0)return *this;
+		int num_place = 0;
+		num_place = num > 1 ? num + 1 : num;
+		const double OmegaInterval = OmegaGroup.back(CVD) / static_cast<double>(num_place);
+		const double DeltaInterval = DeltaGroup.back(CVD) / static_cast<double>(num_place);
+		const double omegaInterval = omegaGroup.back(CVD) / static_cast<double>(num_place);
+		const double thetaInterval = thetaGroup.back(CVD) / static_cast<double>(num_place);
+		for (int i = 0; i < num; i++)
+		{
+			OmegaGroup.push_back(OmegaGroup.back(CVD) - OmegaInterval,CVD);
+			DeltaGroup.push_back(DeltaGroup.back(CVD) - DeltaInterval,CVD);
+			omegaGroup.push_back(omegaGroup.back(CVD) - omegaInterval,CVD);
+			KGroup.push_back(0.0,CVD);
+			HGroup.push_back(H_value,CVD);
+			thetaGroup.push_back(thetaGroup.back(CVD) - thetaInterval,CVD);
+			deltaSGroup.push_back(deltaS_value,CVD);
+			velocityGroup.push_back(velocity_value,CVD);
+			densityGroup.push_back(density,CVD);
+			PupGroup.push_back(0.0,CVD); PdownGroup.push_back(0.0,CVD);
+			TupGroup.push_back(0.0,CVD); TdownGroup.push_back(0.0,CVD);
+			GravityGroup.push_back(0.0,CVD);
+			GravityGroupCos.push_back(0.0,CVD); GravityGroupSin.push_back(0.0,CVD);
+			XGroup.push_back(0.0,CVD); YGroup.push_back(0.0,CVD);
+			slabLength += deltaS_value; size += 1;
+		}
 
+		return *this;
+	}
 	
 	static void	InitializeTorqueGroup(int num_iterate)
 	{

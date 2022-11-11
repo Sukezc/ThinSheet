@@ -42,6 +42,7 @@ void computeKernelGpu(bool saveFlag, ElementGroup& Egold, ElementGroup& Egnew, S
 	ElementGroup::InitializeTorqueGroup(model.num_iterate);
 	bool ResetMatrix;
 	Egold = ElementGroup(model); Egnew = ElementGroup(model);
+	bool GpuSwitch = true;
 	for (int i = model.extrudepolicy.iterating; i < model.num_iterate; i++)
 	{
 		if (model.grid_num < 128)
@@ -60,7 +61,12 @@ void computeKernelGpu(bool saveFlag, ElementGroup& Egold, ElementGroup& Egnew, S
 		}
 		else
 		{
-			ResetMatrix = Elongate(Egold, Egnew, model);
+			if (GpuSwitch)
+			{
+				Egnew.sendAll(); Egold.sendAll();
+				GpuSwitch = false;
+			}
+			ResetMatrix = ElongateGpu(Egold, Egnew, model);
 			
 			deltaS_iterate_gpu(Egold, Egnew, model.dt);
 			theta_iterate_gpu(Egold, Egnew, model.dt);
