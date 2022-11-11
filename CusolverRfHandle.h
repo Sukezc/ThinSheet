@@ -4,11 +4,13 @@
 #include "cusolverRf.h"
 #include "cusolverSp.h"
 #include "cusolverSp_LOWLEVEL_PREVIEW.h"
+#include"CuVector.h"
+#include"SolverInterface.h"
+#include"CudaAllocator.h"
 #include<vector>
 #include<type_traits>
 #include<algorithm>
-#include"CuVector.h"
-#include"SolverInterface.h"
+
 
 /*
 
@@ -171,14 +173,14 @@ public:
 	void Reset()
 	{
 		if (cusolverRfH) { checkCudaErrors(cusolverRfDestroy(cusolverRfH)); }
-		if (cusolverSpH) { checkCudaErrors(cusolverSpDestroy(cusolverSpH)); }
-		if (descrA) { checkCudaErrors(cusparseDestroyMatDescr(descrA)); }
+		//if (cusolverSpH) { checkCudaErrors(cusolverSpDestroy(cusolverSpH)); }
+		//if (descrA) { checkCudaErrors(cusparseDestroyMatDescr(descrA)); }
 		if (info) { checkCudaErrors(cusolverSpDestroyCsrluInfoHost(info)); }
 
-		checkCudaErrors(cusolverSpCreate(&cusolverSpH));
-		checkCudaErrors(cusparseCreateMatDescr(&descrA));
-		checkCudaErrors(cusparseSetMatType(descrA, CUSPARSE_MATRIX_TYPE_GENERAL));
-		checkCudaErrors(cusparseSetMatIndexBase(descrA, CUSPARSE_INDEX_BASE_ZERO));
+		//checkCudaErrors(cusolverSpCreate(&cusolverSpH));
+		//checkCudaErrors(cusparseCreateMatDescr(&descrA));
+		//checkCudaErrors(cusparseSetMatType(descrA, CUSPARSE_MATRIX_TYPE_GENERAL));
+		//checkCudaErrors(cusparseSetMatIndexBase(descrA, CUSPARSE_INDEX_BASE_ZERO));
 		checkCudaErrors(cusolverSpCreateCsrluInfoHost(&info));
 
 		checkCudaErrors(cusolverRfCreate(&cusolverRfH));

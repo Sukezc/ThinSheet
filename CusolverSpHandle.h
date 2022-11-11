@@ -14,7 +14,11 @@ used for sparse matrix solving
 
 */
 
+/*
 
+DEPRECATED Temporarily
+
+*/
 
 
 //选择计算平台

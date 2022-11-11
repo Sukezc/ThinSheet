@@ -175,6 +175,7 @@ public:
 		{
 			(ptr + i)->send();
 		}
+		return *this;
 	}
 
 	ElementGroup& fetchAll()
@@ -184,6 +185,7 @@ public:
 		{
 			(ptr + i)->fetch();
 		}
+		return *this;
 	}
 
 	ElementGroup& elongate(double deltaS_value, double H_value, double velocity_value,int num = 1)

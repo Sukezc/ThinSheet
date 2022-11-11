@@ -19,10 +19,10 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <CudaCompile Include="computeWidget.cpp" />
-    <CudaCompile Include="element_handle.cpp" />
-    <CudaCompile Include="element_iterate.cpp" />
-    <CudaCompile Include="main.cpp">
+    <CudaCompile Include="computeWidget.cu" />
+    <CudaCompile Include="element_handle.cu" />
+    <CudaCompile Include="element_iterate.cu" />
+    <CudaCompile Include="main.cu">
       <FileType>CppCode</FileType>
     </CudaCompile>
     <ClCompile Include="Parser.cpp" />
