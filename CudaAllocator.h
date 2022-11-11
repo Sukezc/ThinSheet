@@ -3,7 +3,7 @@
 #include <device_launch_parameters.h>
 #include<vector>
 #include<type_traits>
-//#define RELEASED 1
+#define RELEASED 1
 
 #ifndef RELEASED 
 #define DEBUG

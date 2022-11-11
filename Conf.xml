@@ -13,7 +13,7 @@
 <CriticalAngleSegment>5</CriticalAngleSegment>
 <DampingRate>1e-1</DampingRate>
 <velocity>1.5e-9</velocity>
-<UpperVelocity>2e-9</UpperVelocity>
+<UpperVelocity>0.0</UpperVelocity>
 <viscosity>2e24</viscosity>
 <MantleViscosity>5e19</MantleViscosity>
 <PipePressureRate>0.0</PipePressureRate>

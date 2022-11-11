@@ -2,7 +2,7 @@
 #include"Xml.h"
 #include<iostream>
 #include<sstream>
-
+#define PI 3.14159265358979
 
 void computeKernel(bool saveFlag, ElementGroup& Egold, ElementGroup& Egnew, SolverInterface* SolverHandle, ModelConf& model, std::ofstream& outfile_xy, std::ofstream& outfile_force)
 {
@@ -270,15 +270,19 @@ void computeCriticalAngleRegressionBasedOnInnerProduct(const std::string& filena
 	}
 }
 
-void computeCreateAngleInitalFile(double Angle,double LengthExpected,ElementGroup& Egold, ElementGroup& Egnew, SolverInterface* SolverHandle, ModelConf& model,const std::string& FileName)
+void computeCreateAngleInitFile(double Angle,double LengthExpected, SolverInterface* SolverHandle, ModelConf& model,const std::string& FileName)
 {
-	bool ResetMatrix;
-	Egold = ElementGroup(model); Egnew = ElementGroup(model);
+	const double velocityInterval = 5e-12;
+	bool ResetMatrix; bool EndFlag = false;
+	ElementGroup Egold; ElementGroup Egnew;
 	
-	for (;;)
+	for (int num = 0;;num++)
 	{
+		Egold = ElementGroup(model); Egnew = ElementGroup(model);
+		std::cout << "num: " << num << " velocity: " << model.velocity << std::endl;
 		for (int i = model.extrudepolicy.iterating;; i++)
 		{
+			//if(!i%200)std::cout << "i: " << i << std::endl;
 			ResetMatrix = Elongate(Egold, Egnew, model);
 			deltaS_iterate(Egold, Egnew, model.dt);
 			theta_iterate(Egold, Egnew, model.dt);
@@ -293,16 +297,33 @@ void computeCreateAngleInitalFile(double Angle,double LengthExpected,ElementGrou
 			Egnew.ComputeSlabLength();
 			if (Egnew.slabLength > LengthExpected)
 			{
-				double thetaAverage = Egnew.ComputeAverageTheta();
-
+				double thetaAverage = fabs(Egnew.ComputeAverageTheta()) / PI * 180.0;
+				std::cout << "thetaAverage: " << thetaAverage << "\n" << std::endl;
+				if (thetaAverage > Angle + 2.0)
+				{
+					model.velocity += velocityInterval;
+					model.process_parameter();
+				}
+				else if (thetaAverage < Angle - 2.0)
+				{
+					model.velocity -= velocityInterval;
+					model.process_parameter();
+				}
+				else
+				{
+					ElementGroup::SaveState(&Egold, &Egnew, &model, FileName);
+					EndFlag = true;
+				}
+				break;
 			}
 			std::swap(Egold, Egnew);
 		}
+		if (EndFlag)break;
 		model.ResetGridAndIterating();
 	}
 }
 
-void computeLoadAngleInitalFile(const std::string& FileName)
+void computeLoadAngleInitFile(const std::string& FileName)
 {
 
 }

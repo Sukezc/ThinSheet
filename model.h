@@ -115,11 +115,8 @@ struct ModelConf
 		{
 			this->omegaStandard.first = (long long)this->grid_num - 1;
 			this->velocityStandard.first = (long long)this->grid_num - 1;
-			if (!(i++))
-			{
-				this->omegaStandard.second = 0.0;
-				this->velocityStandard.second = this->velocity;
-			}
+			this->omegaStandard.second = 0.0;
+			this->velocityStandard.second = this->velocity;
 		}
 		else if (boundaryCondition == BoundaryCondition::ClampedBoth)
 		{
@@ -242,14 +239,19 @@ struct ModelConf
 		simulation = SimulateTypeSelecter[root["StimulateType"].text()];
 		forceCondition = ForceConditionSelecter[root["ForceCondition"].text()];
 
-		deltaS = slabLength / (size_t(grid_num) - 1);
+		
 		criticalangle = std::stod(root["CriticalAngle"].text());
 		criticalRangeCount = std::stoi(root["CriticalAngleRangeCount"].text());
 		criticalAngleRange.first = std::stod(root["CriticalAngleRangeLeft"].text());
 		criticalAngleRange.second = std::stod(root["CriticalAngleRangeRight"].text());
 		criticalAngleSegment = std::stoi(root["CriticalAngleSegment"].text());
 
+		deltaS = slabLength / (size_t(grid_num) - 1);
+		velocity += upperVelocity;
+	}
 
+	void process_parameter()
+	{
 		if (criticalRangeCount > 1) criticalangle = (criticalAngleRange.first + criticalAngleRange.second) / 2.0;
 
 		if (simulation == SimulateType::Bend)
@@ -260,13 +262,12 @@ struct ModelConf
 		{
 			//velocity = pow(20.0, 4) * H * H * g * density / viscosity;
 			//slabLength = 0.1*pow(viscosity * velocity * H * H / g / density, 0.25);
-			deltaS = slabLength / (size_t(grid_num) - 1);
 			//dt = pow(viscosity * H * H / velocity / velocity / velocity / g / density, 0.25) / (double)deltaT_coefficient;
 			//dt = slabLength / velocity / (double)deltaT_coefficient;
 			//velocity += upperVelocity;
-			dt = pow(viscosity * H * H / (velocity + upperVelocity) / (velocity + upperVelocity) / (velocity + upperVelocity) / g / density, 0.25) / (double)deltaT_coefficient;
+			dt = pow(viscosity * H * H / (velocity) / (velocity) / (velocity) / g / density, 0.25) / (double)deltaT_coefficient;
 		}
-		velocity += upperVelocity;
+		
 
 		double IntervalMove = velocity * dt;
 
@@ -308,5 +309,5 @@ struct ModelConf
 
 		Standardize();
 	}
-
+	
 };

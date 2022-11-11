@@ -76,6 +76,7 @@ int main(int argc, char* argv[])
 	}
 	std::ifstream fin(argv[1]);
 	model.load_parameter(fin);
+	model.process_parameter();
 	ElementGroup Egold; ElementGroup Egnew;
 	fin.close();
 
@@ -103,14 +104,15 @@ int main(int argc, char* argv[])
 	//computeCriticalAngleRegressionBasedOnInnerProduct(argv[1],dampRate_innerProduct,Egold,Egnew,SolverHandle,model);
 	//std::string dir = std::to_string(fabs(model.criticalangle));
 	std::string dir = "AngleFileTest";
-	system((mkdir + " " + dir).c_str());
-	system((copy + " " + "Conf.xml" + " " + dir).c_str());
-	std::ofstream outfile_xy(dir + "/" + model.XYaddress);
-	std::ofstream outfile_force(dir + "/" + model.Forceaddress);
-	std::ofstream outfile_Torque(dir + "/" + model.Torqueaddress);
-	computeKernelGpu(true, Egold, Egnew, SolverHandle, model,outfile_xy, outfile_force);
-	vector_save(ElementGroup::GravityTorqueGroup, outfile_Torque);
-	vector_save(ElementGroup::PforceTorqueGroup, outfile_Torque);
+	//system((mkdir + " " + dir).c_str());
+	//system((copy + " " + "Conf.xml" + " " + dir).c_str());
+	//std::ofstream outfile_xy(dir + "/" + model.XYaddress);
+	//std::ofstream outfile_force(dir + "/" + model.Forceaddress);
+	//std::ofstream outfile_Torque(dir + "/" + model.Torqueaddress);
+	//computeKernelGpu(true, Egold, Egnew, SolverHandle, model,outfile_xy, outfile_force);
+	computeCreateAngleInitalFile(60.0, 5e5, SolverHandle, model, "60.dat");
+	//vector_save(ElementGroup::GravityTorqueGroup, outfile_Torque);
+	//vector_save(ElementGroup::PforceTorqueGroup, outfile_Torque);
 	delete SolverHandle;
 	return 0;
 
