@@ -179,6 +179,7 @@
       <TargetMachinePlatform>64</TargetMachinePlatform>
       <AdditionalOptions>--extended-lambda %(AdditionalOptions)</AdditionalOptions>
       <CodeGeneration>compute_61,sm_61</CodeGeneration>
+      <MaxRegCount>64</MaxRegCount>
     </CudaCompile>
     <PostBuildEvent>
       <Command>copy $(SolutionDir)$(Platform)\$(Configuration)\$(ProjectName).exe D:\CODE\FileWorking\auto</Command>

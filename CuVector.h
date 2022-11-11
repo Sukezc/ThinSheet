@@ -3,6 +3,7 @@
 #include <device_launch_parameters.h>
 #include<thrust/host_vector.h>
 #include<thrust/device_vector.h>
+#include<thrust/functional.h>
 #include<type_traits>
 
 #define EXPAND(x) x
@@ -174,45 +175,37 @@ public:
 		return Hvec[pos];
 	}
 
-	auto begin() noexcept
-	{
-		return Hvec.begin();
-	}
+	auto begin() noexcept{return Hvec.begin();}
 
-	auto end() noexcept
-	{
-		return Hvec.end();
-	}
+	auto end() noexcept{return Hvec.end();}
 
-	auto begin(int) noexcept
-	{
-		return Dvec.begin();
-	}
+	auto cbegin() const noexcept{ return Hvec.cbegin(); }
 
-	auto end(int) noexcept
-	{
-		return Dvec.end();
-	}
+	auto cend() noexcept{ return Hvec.cend(); }
 
-	auto rbegin() noexcept
-	{
-		return Hvec.rbegin();
-	}
+	auto rbegin() noexcept{return Hvec.rbegin();}
 
-	auto rend() noexcept
-	{
-		return Hvec.rend();
-	}
+	auto rend() noexcept{return Hvec.rend();}
 
-	auto rbegin(int) noexcept
-	{
-		return Dvec.rbegin();
-	}
+	auto crbegin() noexcept {return Hvec.crbegin();}
 
-	auto rend(int) noexcept
-	{
-		return Dvec.rend();
-	}
+	auto crend() noexcept {return Hvec.crend();}
+
+	auto begin(int) noexcept{return Dvec.begin();}
+
+	auto end(int) noexcept{return Dvec.end();}
+
+	auto cbegin(int) const noexcept{return Dvec.cbegin();}
+
+	auto cend(int) const noexcept{return Dvec.cend();}
+
+	auto rbegin(int) noexcept{return Dvec.rbegin();}
+
+	auto rend(int) noexcept{return Dvec.rend();}
+
+	auto crbegin(int)const noexcept {return Dvec.crbegin();}
+
+	auto crend(int) const noexcept{return Dvec.crend();}
 
 	size_type size() noexcept
 	{

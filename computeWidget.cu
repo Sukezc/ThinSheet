@@ -78,7 +78,7 @@ void computeKernelGpu(bool saveFlag, ElementGroup& Egold, ElementGroup& Egnew, S
 			bodyforce_compute_gpu(Egnew);
 			K_density_bodyforce_synchronize(Egnew);
 
-			surface_force_iterate(Egnew, model, i);
+			surface_force_iterate_gpu(Egnew, model, i);
 			Omega_Delta_iterate_gpu(Egnew, model, SolverHandle, ResetMatrix);
 			omega_velocity_iterate_gpu(Egnew, model,SolverHandle);
 		}
@@ -270,9 +270,36 @@ void computeCriticalAngleRegressionBasedOnInnerProduct(const std::string& filena
 	}
 }
 
-void computeCreateAngleInitalFile(double Angle)
+void computeCreateAngleInitalFile(double Angle,double LengthExpected,ElementGroup& Egold, ElementGroup& Egnew, SolverInterface* SolverHandle, ModelConf& model,const std::string& FileName)
 {
+	bool ResetMatrix;
+	Egold = ElementGroup(model); Egnew = ElementGroup(model);
+	
+	for (;;)
+	{
+		for (int i = model.extrudepolicy.iterating;; i++)
+		{
+			ResetMatrix = Elongate(Egold, Egnew, model);
+			deltaS_iterate(Egold, Egnew, model.dt);
+			theta_iterate(Egold, Egnew, model.dt);
+			H_iterate(Egold, Egnew, model.dt);
+			K_iterate(Egnew);
+			density_iterate(Egnew, model);
+			bodyforce_compute(Egnew);
+			surface_force_iterate(Egnew, model, i);
+			Omega_Delta_iterate(Egnew, model, SolverHandle, ResetMatrix);
+			omega_iterate(Egnew, model);
+			velocity_iterate(Egnew, model);
+			Egnew.ComputeSlabLength();
+			if (Egnew.slabLength > LengthExpected)
+			{
+				double thetaAverage = Egnew.ComputeAverageTheta();
 
+			}
+			std::swap(Egold, Egnew);
+		}
+		model.ResetGridAndIterating();
+	}
 }
 
 void computeLoadAngleInitalFile(const std::string& FileName)

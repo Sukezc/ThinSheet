@@ -10,6 +10,8 @@
 #include<cmath>
 #include<iomanip>
 #include<iostream>
+#include<thrust/transform.h>
+#include<thrust/reduce.h>
 
 
 
@@ -305,6 +307,12 @@ public:
 		return PforceTorqueGroup[PforceTorqueGroup.size() - iterating - 1];
 	}
 
+	double ComputeAverageTheta()
+	{
+		ComputeSlabLength();
+		return std::inner_product(thetaGroup.begin() + 1, thetaGroup.end(), deltaSGroup.begin() + 1, 0.0) / slabLength;
+	}
+
 	ElementGroup& ComputeXY()
 	{
 		double x = 0, y = 0;
@@ -319,6 +327,14 @@ public:
 		return *this;
 	}
 
+	ElementGroup& ComputeXY(int)
+	{
+		thrust::transform(thetaGroup.rbegin(CVD), thetaGroup.rend(CVD), deltaSGroup.rbegin(CVD), XGroup.rbegin(CVD), [=]__device__(auto & it1, auto & it2) { return cos(it1) * it2; });
+		thrust::transform(thetaGroup.rbegin(CVD), thetaGroup.rend(CVD), deltaSGroup.rbegin(CVD), YGroup.rbegin(CVD), [=]__device__(auto & it1, auto & it2) { return sin(it1) * it2; });
+		thrust::exclusive_scan(XGroup.rbegin(CVD), XGroup.rend(CVD), XGroup.rbegin(CVD));
+		thrust::exclusive_scan(YGroup.rbegin(CVD), YGroup.rend(CVD), YGroup.rbegin(CVD));
+	}
+
 	ElementGroup& ComputeY()
 	{
 		double y = 0;
@@ -331,6 +347,12 @@ public:
 		return *this;
 	}
 
+	ElementGroup& ComputeY(int)
+	{
+		thrust::transform(thetaGroup.rbegin(CVD), thetaGroup.rend(CVD), deltaSGroup.rbegin(CVD), YGroup.rbegin(CVD), [=]__device__(auto & it1, auto & it2) { return sin(it1) * it2; });
+		thrust::exclusive_scan(YGroup.rbegin(CVD), YGroup.rend(CVD), YGroup.rbegin(CVD));
+	}
+
 	ElementGroup& ComputeSlabLength()
 	{
 		double length = 0;
@@ -339,6 +361,12 @@ public:
 			length += deltaSGroup[i];
 		}
 		slabLength = length;
+		return *this;
+	}
+
+	ElementGroup& ComputeSlabLength(int)
+	{
+		slabLength = thrust::reduce(deltaSGroup.begin(CVD) + 1, deltaSGroup.end(CVD));
 		return *this;
 	}
 
@@ -376,7 +404,6 @@ public:
 		container_type::size_type BufferSize;
 		for (int i = 0; i < ElementGroup::container_num; i++)
 		{
-			
 			container_type* p_vector = (container_type*)p_Egold + i;
 			BufferSize = p_vector->size();
 			outfileEg.write((char*)&BufferSize, sizeof(container_type::size_type));
