@@ -125,27 +125,38 @@ public:
 		Dvec = Hvec;
 	}
 
+	template<typename Iterator1, typename Iterator2, std::enable_if_t<std::is_pod_v<Iterator1>&&std::is_pod_v<Iterator2>, Iterator1>* = nullptr>
+	void send(Iterator1 begin, Iterator1 end, Iterator2 result)
+	{
+		thrust::copy(Hvec.begin() + begin, Hvec.begin() + end, Dvec.begin() + result);
+	}
+
+	template<typename Iterator1, typename Iterator2, std::enable_if_t<!std::is_pod_v<Iterator1>&& !std::is_pod_v<Iterator2>, Iterator1>* = nullptr>
+	void send(Iterator1 begin, Iterator1 end, Iterator2 result)
+	{
+		thrust::copy(begin,end,result);
+	}
 
 	void fetch() {
 		Hvec = Dvec;
 	}
 
+	template<typename Iterator1, typename Iterator2, std::enable_if_t<std::is_pod_v<Iterator1>&& std::is_pod_v<Iterator2>, Iterator1>* = nullptr>
+	void fetch(Iterator1 begin, Iterator1 end, Iterator2 result)
+	{
+		thrust::copy(Dvec.begin() + begin, Dvec.begin() + end, Hvec.begin() + result);
+	}
+
+	template<typename Iterator1, typename Iterator2, std::enable_if_t<!std::is_pod_v<Iterator1>&& !std::is_pod_v<Iterator2>, Iterator1>* = nullptr>
+	void fetch(Iterator1 begin, Iterator1 end, Iterator2 result)
+	{
+		thrust::copy(begin,end,result);
+	}
+
 	template<typename Iterator1, typename Iterater2>
-	void trans(Iterator1 input1, Iterator1 input2, Iterater2 output)
+	void trans(Iterator1 begin, Iterator1 end, Iterater2 result)
 	{
-		thrust::copy(input1, input2, output);
-	}
-
-	template<typename KeyType>
-	void trans(KeyType input1, KeyType input2, KeyType output,HostToDevice)
-	{
-		thrust::copy(Hvec.begin() + input1, Hvec.begin() + input2, Dvec.begin() + output);
-	}
-
-	template<typename KeyType>
-	void trans(KeyType input1, KeyType input2, KeyType output, DeviceToHost)
-	{
-		thrust::copy(Dvec.begin() + input1, Dvec.begin() + input2, Hvec.begin() + output);
+		thrust::copy(begin, end, result);
 	}
 
 	void resize(size_type size)

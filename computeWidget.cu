@@ -27,7 +27,7 @@ void computeKernel(bool saveFlag, ElementGroup& Egold, ElementGroup& Egnew, Solv
 			Egnew.ComputeXY().ComputeGravityTorque(i).ComputePforceTorque(i);
 			if (saveFlag) Egnew.SaveXY(outfile_xy).SaveForce(outfile_force);
 		}
-		else if (!(i % (model.num_iterate / model.num_XY)))
+		else if (!(i % model.recordInterval))
 		{
 			Egnew.ComputeXY().ComputeGravityTorque(i).ComputePforceTorque(i);
 			if (saveFlag) Egnew.SaveXY(outfile_xy).SaveForce(outfile_force);
@@ -88,7 +88,7 @@ void computeKernelGpu(bool saveFlag, ElementGroup& Egold, ElementGroup& Egnew, S
 			Egnew.ComputeXY().ComputeGravityTorque(i).ComputePforceTorque(i);
 			if (saveFlag) Egnew.SaveXY(outfile_xy).SaveForce(outfile_force);
 		}
-		else if (!(i % (model.num_iterate / model.num_XY)))
+		else if (!(i % model.recordInterval))
 		{
 			Egnew.ComputeXY().ComputeGravityTorque(i).ComputePforceTorque(i);
 			if (saveFlag) Egnew.SaveXY(outfile_xy).SaveForce(outfile_force);
@@ -311,7 +311,7 @@ void computeCreateAngleInitFile(double Angle,double LengthExpected, SolverInterf
 				}
 				else
 				{
-					ElementGroup::SaveState(&Egold, &Egnew, &model, FileName);
+					ElementGroup::SaveState(&Egnew, &Egold, &model, FileName);
 					EndFlag = true;
 				}
 				break;
@@ -323,7 +323,31 @@ void computeCreateAngleInitFile(double Angle,double LengthExpected, SolverInterf
 	}
 }
 
-void computeLoadAngleInitFile(const std::string& FileName)
+void computeLoadAngleInitFile(ElementGroup& Egold, ElementGroup& Egnew, ModelConf& model, const std::string& FileName)
 {
+	ElementGroup::LoadState(&Egold, &Egnew, &model, FileName);
+}
 
+void computeSave(ElementGroup& Egnew, ModelConf& model, std::ofstream& outfile_xy, std::ofstream& outfile_force)
+{
+	if (model.SaveEveryXY)
+	{
+		Egnew.SaveXY(outfile_xy).SaveForce(outfile_force);
+	}
+	else if (!((model.extrudepolicy.iterating - 1) % model.recordInterval))
+	{
+		Egnew.SaveXY(outfile_xy).SaveForce(outfile_force);
+	}
+}
+
+void computeSaveGpu(ElementGroup& Egnew, ModelConf& model, std::ofstream& outfile_xy, std::ofstream& outfile_force)
+{
+	if (model.SaveEveryXY)
+	{
+		Egnew.SaveXY(outfile_xy,CVD).SaveForce(outfile_force,CVD);
+	}
+	else if (!((model.extrudepolicy.iterating - 1) % model.recordInterval))
+	{
+		Egnew.SaveXY(outfile_xy,CVD).SaveForce(outfile_force,CVD);
+	}
 }

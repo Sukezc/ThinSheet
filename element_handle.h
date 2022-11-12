@@ -378,8 +378,29 @@ public:
 		return *this;
 	}
 
+	ElementGroup& SaveXY(std::ofstream& outfile,int)
+	{
+		ComputeXY(CVD);
+		XGroup.fetch(); YGroup.fetch();
+		vector_save(XGroup, outfile);
+		vector_save(YGroup, outfile);
+		outfile << "\n";
+		return *this;
+	}
+
 	ElementGroup& SaveForce(std::ofstream& outfile)
 	{
+		vector_save(GravityGroupCos, outfile);
+		vector_save_pred(PupGroup, PdownGroup, [](auto& it1, auto& it2) { return fabs(it1) + fabs(it2); }, outfile);
+		vector_save(PupGroup, outfile);
+		vector_save(PdownGroup, outfile);
+		outfile << "\n";
+		return *this;
+	}
+
+	ElementGroup& SaveForce(std::ofstream& outfile,int)
+	{
+		GravityGroupCos.fetch(); PupGroup.fetch(); PdownGroup.fetch();
 		vector_save(GravityGroupCos, outfile);
 		vector_save_pred(PupGroup, PdownGroup, [](auto& it1, auto& it2) { return fabs(it1) + fabs(it2); }, outfile);
 		vector_save(PupGroup, outfile);

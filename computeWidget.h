@@ -16,4 +16,8 @@ void computeCriticalAngleRegressionBasedOnInnerProduct(const std::string& config
 //Angle +бу
 void computeCreateAngleInitFile(double Angle, double LengthExpected, SolverInterface* SolverHandle, ModelConf& model, const std::string& FileName);
 
-void computeLoadAngleInitFile(const std::string& FileName);
+void computeLoadAngleInitFile(ElementGroup& Egold, ElementGroup& Egnew, ModelConf& model,const std::string& FileName);
+
+void computeSave(ElementGroup& Egnew, ModelConf& model, std::ofstream& outfile_xy, std::ofstream& outfile_force);
+
+void computeSaveGpu(ElementGroup& Egnew, ModelConf& model, std::ofstream& outfile_xy, std::ofstream& outfile_force);
