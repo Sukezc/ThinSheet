@@ -455,7 +455,7 @@ void Omega_Delta_iterate(ElementGroup& eg,ModelConf& model, handle& SolverHandle
 		break;
 	}
 
-
+	
 	if (ResetMatrix)
 	{
 		SolverHandle->Reset();
@@ -473,7 +473,6 @@ void Omega_Delta_iterate(ElementGroup& eg,ModelConf& model, handle& SolverHandle
 		long long j = n - i; double H = eg.HGroup[i];
 		eg.OmegaGroup[i] = SolverHandle->X[j] / H / H / H;
 		eg.DeltaGroup[i] = SolverHandle->X[j + n + 1] / H;
-
 	}
 }
 

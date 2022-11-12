@@ -7,11 +7,12 @@
 void computeKernel(bool saveFlag, ElementGroup& Egold, ElementGroup& Egnew, SolverInterface* SolverHandle, ModelConf& model, std::ofstream& outfile_xy, std::ofstream& outfile_force)
 {
 	ElementGroup::InitializeTorqueGroup(model.num_iterate);
+	//Egold = ElementGroup(model); Egnew = ElementGroup(model);
 	bool ResetMatrix;
-	Egold = ElementGroup(model); Egnew = ElementGroup(model);
 	for (int i = model.extrudepolicy.iterating; i < model.num_iterate; i++)
 	{
 		ResetMatrix = Elongate(Egold, Egnew, model);
+		if (i == model.extrudepolicy.iterating - 1)ResetMatrix = true;
 		deltaS_iterate(Egold, Egnew, model.dt);
 		theta_iterate(Egold, Egnew, model.dt);
 		H_iterate(Egold, Egnew, model.dt);
@@ -41,13 +42,14 @@ void computeKernelGpu(bool saveFlag, ElementGroup& Egold, ElementGroup& Egnew, S
 {
 	ElementGroup::InitializeTorqueGroup(model.num_iterate);
 	bool ResetMatrix;
-	Egold = ElementGroup(model); Egnew = ElementGroup(model);
+	//Egold = ElementGroup(model); Egnew = ElementGroup(model);
 	bool GpuSwitch = true;
 	for (int i = model.extrudepolicy.iterating; i < model.num_iterate; i++)
 	{
 		if (model.grid_num < 128)
 		{
 			ResetMatrix = Elongate(Egold, Egnew, model);
+			if (i == model.extrudepolicy.iterating - 1)ResetMatrix = true;
 			deltaS_iterate(Egold, Egnew, model.dt);
 			theta_iterate(Egold, Egnew, model.dt);
 			H_iterate(Egold, Egnew, model.dt);
@@ -58,6 +60,7 @@ void computeKernelGpu(bool saveFlag, ElementGroup& Egold, ElementGroup& Egnew, S
 			Omega_Delta_iterate(Egnew, model, SolverHandle, ResetMatrix);
 			omega_iterate(Egnew, model);
 			velocity_iterate(Egnew, model);
+			if (saveFlag)computeSave(Egnew, model, outfile_xy, outfile_force);
 		}
 		else
 		{
@@ -67,7 +70,8 @@ void computeKernelGpu(bool saveFlag, ElementGroup& Egold, ElementGroup& Egnew, S
 				GpuSwitch = false;
 			}
 			ResetMatrix = ElongateGpu(Egold, Egnew, model);
-			
+			if (i == model.extrudepolicy.iterating - 1)ResetMatrix = true;
+
 			deltaS_iterate_gpu(Egold, Egnew, model.dt);
 			theta_iterate_gpu(Egold, Egnew, model.dt);
 			H_iterate_gpu(Egold, Egnew, model.dt);
@@ -81,8 +85,11 @@ void computeKernelGpu(bool saveFlag, ElementGroup& Egold, ElementGroup& Egnew, S
 			surface_force_iterate_gpu(Egnew, model, i);
 			Omega_Delta_iterate_gpu(Egnew, model, SolverHandle, ResetMatrix);
 			omega_velocity_iterate_gpu(Egnew, model,SolverHandle);
+			if (saveFlag)computeSaveGpu(Egnew, model, outfile_xy, outfile_force);
 		}
 		//std::cout << Egnew.velocityGroup.back() << " " << Egnew.velocityGroup.Dvec.back() << std::endl;
+		Egnew.ComputeXY().ComputeGravityTorque(i).ComputePforceTorque(i);
+		
 		if (model.SaveEveryXY)
 		{
 			Egnew.ComputeXY().ComputeGravityTorque(i).ComputePforceTorque(i);
@@ -323,9 +330,14 @@ void computeCreateAngleInitFile(double Angle,double LengthExpected, SolverInterf
 	}
 }
 
-void computeLoadAngleInitFile(ElementGroup& Egold, ElementGroup& Egnew, ModelConf& model, const std::string& FileName)
+void computeLoadAngleInitFile(ElementGroup& Egold, ElementGroup& Egnew, ModelConf& model,std::ifstream& fin,const std::string& FileName)
 {
+	model.load_parameter(fin);
+	model.process_parameter();
+	double velocity = model.velocity;
 	ElementGroup::LoadState(&Egold, &Egnew, &model, FileName);
+	double velocity_rate = velocity / Egold.velocityGroup.back();
+	std::for_each(Egold.velocityGroup.begin(), Egold.velocityGroup.end(), [=](auto& it) {it *= velocity_rate; });
 }
 
 void computeSave(ElementGroup& Egnew, ModelConf& model, std::ofstream& outfile_xy, std::ofstream& outfile_force)
