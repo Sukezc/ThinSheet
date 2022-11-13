@@ -330,12 +330,16 @@ void computeCreateAngleInitFile(double Angle,double LengthExpected, SolverInterf
 	}
 }
 
-void computeLoadAngleInitFile(ElementGroup& Egold, ElementGroup& Egnew, ModelConf& model,std::ifstream& fin,const std::string& FileName)
+void computeLoadAngleInitFile(double Angle,ElementGroup& Egold, ElementGroup& Egnew, ModelConf& model,std::ifstream& fin,const std::string& FileName)
 {
 	model.load_parameter(fin);
 	model.process_parameter();
 	double velocity = model.velocity;
 	ElementGroup::LoadState(&Egold, &Egnew, &model, FileName);
+	auto theta_it = std::find_if(Egold.thetaGroup.rbegin(), Egold.thetaGroup.rend(), [=](auto& it) {return fabs(it) / PI * 180 > Angle; });
+	auto velocity_it = Egold.velocityGroup.rbegin() + std::distance(Egold.thetaGroup.rbegin(), theta_it);
+	std::for_each(theta_it + 1, Egold.thetaGroup.rend(), [=](auto& it) {it = *theta_it; });
+	std::for_each(velocity_it + 1, Egold.velocityGroup.rend(), [=](auto& it) {it = *velocity_it; });
 	double velocity_rate = velocity / Egold.velocityGroup.back();
 	std::for_each(Egold.velocityGroup.begin(), Egold.velocityGroup.end(), [=](auto& it) {it *= velocity_rate; });
 }

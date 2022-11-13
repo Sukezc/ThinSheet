@@ -111,8 +111,8 @@ int main(int argc, char* argv[])
 	std::ofstream outfile_force(dir + "/" + model.Forceaddress);
 	std::ofstream outfile_Torque(dir + "/" + model.Torqueaddress);
 	//computeKernelGpu(true, Egold, Egnew, SolverHandle, model,outfile_xy, outfile_force);
-	//computeCreateAngleInitFile(60.0, 1e6, SolverHandle, model, "60_1.dat");
-	computeLoadAngleInitFile(Egold, Egnew, model, fin, "60.dat");
+	//computeCreateAngleInitFile(20.0, 5e5, SolverHandle, model, "20.dat");
+	computeLoadAngleInitFile(20.0,Egold, Egnew, model, fin, "20.dat");
 	
 	computeKernel(true, Egold, Egnew, SolverHandle, model, outfile_xy, outfile_force);
 	vector_save(ElementGroup::GravityTorqueGroup, outfile_Torque);
