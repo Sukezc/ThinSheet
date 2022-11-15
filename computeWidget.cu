@@ -287,10 +287,12 @@ void computeCreateAngleInitFile(double Angle,double LengthExpected, SolverInterf
 	{
 		Egold = ElementGroup(model); Egnew = ElementGroup(model);
 		std::cout << "num: " << num << " velocity: " << model.velocity << std::endl;
+		model.Debug();
 		for (int i = model.extrudepolicy.iterating;; i++)
 		{
-			//if(!i%200)std::cout << "i: " << i << std::endl;
+			//std::cout << "i: " << i << std::endl;
 			ResetMatrix = Elongate(Egold, Egnew, model);
+			if (i == model.extrudepolicy.iterating - 1)ResetMatrix = true;
 			deltaS_iterate(Egold, Egnew, model.dt);
 			theta_iterate(Egold, Egnew, model.dt);
 			H_iterate(Egold, Egnew, model.dt);
@@ -302,6 +304,7 @@ void computeCreateAngleInitFile(double Angle,double LengthExpected, SolverInterf
 			omega_iterate(Egnew, model);
 			velocity_iterate(Egnew, model);
 			Egnew.ComputeSlabLength();
+			
 			if (Egnew.slabLength > LengthExpected)
 			{
 				double thetaAverage = fabs(Egnew.ComputeAverageTheta()) / PI * 180.0;

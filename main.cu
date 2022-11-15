@@ -54,19 +54,17 @@ last modify date:2022.10.31
 //	return 0;
 //}
 
-//int main()
-//{
-//	std::vector<int> temp{ 1,2,3,4,5 };
-//	thrust::device_vector<int> a(temp.begin(),temp.end());
-//	//thrust::device_vector<int> b(temp.rbegin(),temp.rend());
-//	thrust::reverse(a.begin(), a.end());
-//	//thrust::transform(thrust::device,a.begin(), a.end(), b.begin(), a.rbegin(), []__device__(auto & it1, auto & it2) { return it1 - it2; });
-//	for (int i = 0; i < 5; i++)std::cout << a[i] << std::endl;
-//	
-//	return 0;
-//}
+int main()
+{
+	
+	thrust::device_vector<int> d_a(10,10);
+	thrust::device_vector<int> d_b(10, 2);
+	thrust::copy(thrust::device, d_a.data(), d_a.data() + 5, d_b.begin());
+	for (int i = 0; i < 10; i++)std::cout << d_b[i] << std::endl;
+	return 0;
+}
 
-int main(int argc, char* argv[])
+int mn(int argc, char* argv[])
 {
 	ModelConf model;
 	if (argc != 2) 
@@ -83,15 +81,15 @@ int main(int argc, char* argv[])
 	model.Debug();
 	
 	REGISTER(CusolverRfHandle)
-	REGISTER(CusolverSpHandle)
+	//REGISTER(CusolverSpHandle)
 	SolverInterface* SolverHandle = NULL;
 
 	if (model.solver == Solver::RF) SolverHandle = ObjFactory::Instance().CreateObj<SolverInterface>("CusolverRfHandle");
-	else if (model.solver == Solver::SP) 
+	/*else if (model.solver == Solver::SP) 
 	{
 		SolverHandle = ObjFactory::Instance().CreateObj<SolverInterface>("CusolverSpHandle");
 		reinterpret_cast<CusolverSpHandle*>(SolverHandle)->solution = model.solution;
-	}
+	}*/
 	
 #ifdef MY_WINDOWS
 	std::string mkdir = "md";
@@ -103,7 +101,7 @@ int main(int argc, char* argv[])
 	//std::pair<double, double> dampRate_innerProduct;
 	//computeCriticalAngleRegressionBasedOnInnerProduct(argv[1],dampRate_innerProduct,Egold,Egnew,SolverHandle,model);
 	//std::string dir = std::to_string(fabs(model.criticalangle));
-	fin.open(argv[1]);
+	
 	std::string dir = "AngleFileTest";
 	system((mkdir + " " + dir).c_str());
 	system((copy + " " + "Conf.xml" + " " + dir).c_str());
@@ -111,9 +109,10 @@ int main(int argc, char* argv[])
 	std::ofstream outfile_force(dir + "/" + model.Forceaddress);
 	std::ofstream outfile_Torque(dir + "/" + model.Torqueaddress);
 	//computeKernelGpu(true, Egold, Egnew, SolverHandle, model,outfile_xy, outfile_force);
-	//computeCreateAngleInitFile(20.0, 5e5, SolverHandle, model, "20.dat");
+	//computeCreateAngleInitFile(20.0, 6.5e5, SolverHandle, model, "20.dat");
+	fin.open(argv[1]);
 	computeLoadAngleInitFile(20.0,Egold, Egnew, model, fin, "20.dat");
-	
+	//std::cout << Egold.velocityGroup.front() << "  " << Egold.velocityGroup.back() << std::endl;
 	computeKernel(true, Egold, Egnew, SolverHandle, model, outfile_xy, outfile_force);
 	vector_save(ElementGroup::GravityTorqueGroup, outfile_Torque);
 	vector_save(ElementGroup::PforceTorqueGroup, outfile_Torque);

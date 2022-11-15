@@ -186,6 +186,11 @@ public:
 		return Hvec[pos];
 	}
 
+	auto operator()(size_type pos)
+	{
+		return Dvec[pos];
+	}
+
 	auto begin() noexcept{return Hvec.begin();}
 
 	auto end() noexcept{return Hvec.end();}
@@ -248,21 +253,42 @@ public:
 		return Dvec.back();
 	}
 
+	dataType& front()
+	{
+		return Hvec.front();
+	}
+
+	auto front(int)
+	{
+		return Dvec.front();
+	}
+
 	void clear() noexcept
 	{
 		Hvec.clear();
 	}
 
 
-	template<typename Iterater>
-	Iterater erase(Iterater left, Iterater right)
+	template<typename Iterator>
+	Iterator erase(Iterator left, Iterator right)
 	{
 		return Hvec.erase(left, right);
+	}
+
+	template<typename Iterator>
+	Iterator erase(Iterator left, Iterator right, int)
+	{
+		return Dvec.erase(left, right);
 	}
 
 	auto erase()
 	{
 		return Hvec.erase(Hvec.begin(), Hvec.end());
+	}
+
+	auto erase(int)
+	{
+		return Dvec.erase(Dvec.begin(), Dvec.end());
 	}
 
 	void SyncSize(HostToDevice)

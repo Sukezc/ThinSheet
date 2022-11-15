@@ -10,6 +10,7 @@
 #include<vector>
 #include<type_traits>
 #include<algorithm>
+#include<thrust/execution_policy.h>
 
 
 /*
@@ -87,14 +88,14 @@ public:
 		if (info) { checkCudaErrors(cusolverSpDestroyCsrluInfoHost(info)); }
 	}
 
-	void Initialize(const std::vector<double>& csrval, const std::vector<int>& csrrowptr, const std::vector<int>& csrcolind)
+	void Initialize(const double* csrval, const int* csrrowptr, const int* csrcolind, const long long vals_size, const int row_size)
 	{
-		csrValA.resize(csrval.size());
-		std::copy(csrval.begin(), csrval.end(), csrValA.begin());
-		csrRowPtrA.resize(csrrowptr.size());
-		std::copy(csrrowptr.begin(), csrrowptr.end(), csrRowPtrA.begin());
-		csrColIndA.resize(csrcolind.size());
-		std::copy(csrcolind.begin(), csrcolind.end(), csrColIndA.begin());
+		csrValA.resize(vals_size);
+		std::copy(csrval, csrval + vals_size, csrValA.begin());
+		csrRowPtrA.resize(row_size);
+		std::copy(csrrowptr , csrrowptr + row_size, csrRowPtrA.begin());
+		csrColIndA.resize(vals_size);
+		std::copy(csrcolind , csrcolind + vals_size, csrColIndA.begin());
 		n = csrRowPtrA.size() - 1;
 
 		P.resize(n); 	
@@ -151,25 +152,40 @@ public:
 		//checkCudaErrors(cudaDeviceSynchronize());
 	}
 
-	void loadB(const std::vector<double>& b)
-	{
-		thrust::copy(b.begin(), b.end(), X.begin(CVD));
-	}
 	
-	void ResetA(const std::vector<double>& csrval, const std::vector<int>& csrrowptr, const std::vector<int>& csrcolind)
+	void loadB(const double* b, const long long size)
 	{
-		thrust::copy(csrval.begin(), csrval.end(), csrValA.begin(CVD));
-		thrust::copy(csrrowptr.begin(), csrrowptr.end(), csrRowPtrA.begin(CVD));
-		thrust::copy(csrcolind.begin(), csrcolind.end(), csrColIndA.begin(CVD));
+		cudaMemcpy(X.data(CVD), b, size * sizeof(double), cudaMemcpyHostToDevice);
+	}
+
+	void ResetA(const double* csrval, const int* csrrowptr, const int* csrcolind, const long long vals_size, const int row_size)
+	{
+		cudaMemcpy(csrValA.data(CVD), csrval, vals_size * sizeof(double), cudaMemcpyHostToDevice);
+		cudaMemcpy(csrRowPtrA.data(CVD), csrrowptr, row_size * sizeof(double), cudaMemcpyHostToDevice);
+		cudaMemcpy(csrColIndA.data(CVD), csrcolind, vals_size * sizeof(double), cudaMemcpyHostToDevice);
+
 		checkCudaErrors(cusolverRfResetValues(
 			n, csrValA.size(CVD),
 			csrRowPtrA.data(CVD), csrColIndA.data(CVD), csrValA.data(CVD),
 			P.data(CVD),
 			Q.data(CVD),
 			cusolverRfH));
-		//checkCudaErrors(cudaDeviceSynchronize());
 	}
 	
+	void ResetAGpu(const double* csrval, const int* csrrowptr, const int* csrcolind, const long long vals_size, const int row_size)
+	{
+		thrust::copy(thrust::device,csrval, csrval + vals_size, csrValA.data(CVD));
+		thrust::copy(thrust::device,csrrowptr, csrrowptr + row_size, csrRowPtrA.data(CVD));
+		thrust::copy(thrust::device,csrcolind, csrcolind + vals_size, csrColIndA.data(CVD));
+		
+		checkCudaErrors(cusolverRfResetValues(
+			n, csrValA.size(CVD),
+			csrRowPtrA.data(CVD), csrColIndA.data(CVD), csrValA.data(CVD),
+			P.data(CVD),
+			Q.data(CVD),
+			cusolverRfH));
+	}
+
 	void Reset()
 	{
 		if (cusolverRfH) { checkCudaErrors(cusolverRfDestroy(cusolverRfH)); }

@@ -459,13 +459,13 @@ void Omega_Delta_iterate(ElementGroup& eg,ModelConf& model, handle& SolverHandle
 	if (ResetMatrix)
 	{
 		SolverHandle->Reset();
-		SolverHandle->Initialize(vals, rowPtr, colInd);
+		SolverHandle->Initialize(vals.data(), rowPtr.data(), colInd.data(),vals.size(),rowPtr.size());
 	}
 	else
 	{
-		SolverHandle->ResetA(vals, rowPtr, colInd);
+		SolverHandle->ResetA(vals.data(), rowPtr.data(), colInd.data(),vals.size(),rowPtr.size());
 	}
-	SolverHandle->loadB(b);
+	SolverHandle->loadB(b.data(),b.size());
 	SolverHandle->solve();
 	SolverHandle->X.fetch();
 	for (long long i = n; i >= 0; i--)
