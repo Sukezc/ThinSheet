@@ -139,7 +139,8 @@ public:
 			cusolverRfH));
 		//checkCudaErrors(cudaDeviceSynchronize());
 		checkCudaErrors(cusolverRfAnalyze(cusolverRfH));
-		T.resize(n); X.resize(n); P.send(); Q.send();
+		T.resize(n); X.resize(n); P.send(); Q.send(); 
+		csrRowPtrA.send();csrColIndA.send();
 	}
 
 	
@@ -158,12 +159,12 @@ public:
 		cudaMemcpy(X.data(CVD), b, size * sizeof(double), cudaMemcpyHostToDevice);
 	}
 
-	void ResetA(const double* csrval, const int* csrrowptr, const int* csrcolind, const long long vals_size, const int row_size)
+	void ResetA(const double* csrval,const long long vals_size)
 	{
 		cudaMemcpy(csrValA.data(CVD), csrval, vals_size * sizeof(double), cudaMemcpyHostToDevice);
-		cudaMemcpy(csrRowPtrA.data(CVD), csrrowptr, row_size * sizeof(double), cudaMemcpyHostToDevice);
-		cudaMemcpy(csrColIndA.data(CVD), csrcolind, vals_size * sizeof(double), cudaMemcpyHostToDevice);
-
+		//cudaMemcpy(csrRowPtrA.data(CVD), csrrowptr, row_size * sizeof(int), cudaMemcpyHostToDevice);
+		//cudaMemcpy(csrColIndA.data(CVD), csrcolind, vals_size * sizeof(int), cudaMemcpyHostToDevice);
+		
 		checkCudaErrors(cusolverRfResetValues(
 			n, csrValA.size(CVD),
 			csrRowPtrA.data(CVD), csrColIndA.data(CVD), csrValA.data(CVD),
@@ -172,11 +173,11 @@ public:
 			cusolverRfH));
 	}
 	
-	void ResetAGpu(const double* csrval, const int* csrrowptr, const int* csrcolind, const long long vals_size, const int row_size)
+	void ResetAGpu(const double* csrval, const long long vals_size)
 	{
 		thrust::copy(thrust::device,csrval, csrval + vals_size, csrValA.data(CVD));
-		thrust::copy(thrust::device,csrrowptr, csrrowptr + row_size, csrRowPtrA.data(CVD));
-		thrust::copy(thrust::device,csrcolind, csrcolind + vals_size, csrColIndA.data(CVD));
+		//thrust::copy(thrust::device,csrrowptr, csrrowptr + row_size, csrRowPtrA.data(CVD));
+		//thrust::copy(thrust::device,csrcolind, csrcolind + vals_size, csrColIndA.data(CVD));
 		
 		checkCudaErrors(cusolverRfResetValues(
 			n, csrValA.size(CVD),

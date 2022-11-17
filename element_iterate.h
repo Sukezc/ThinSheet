@@ -463,7 +463,7 @@ void Omega_Delta_iterate(ElementGroup& eg,ModelConf& model, handle& SolverHandle
 	}
 	else
 	{
-		SolverHandle->ResetA(vals.data(), rowPtr.data(), colInd.data(),vals.size(),rowPtr.size());
+		SolverHandle->ResetA(vals.data(), vals.size());
 	}
 	SolverHandle->loadB(b.data(),b.size());
 	SolverHandle->solve();

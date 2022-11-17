@@ -284,7 +284,7 @@ void Omega_Delta_iterate_gpu(ElementGroup& Egnew,ModelConf& model,SolverInterfac
 
 void omega_velocity_iterate_gpu(ElementGroup& Egnew, ModelConf& model, SolverInterface* handle);
 
-void ClampedFreeGpu(ElementGroup& eg, CuVector<double>& vals, CuVector<int>& rowPtr, CuVector<int>& colInd);
+void ClampedFreeGpu(ElementGroup& eg, CuVector<double>& vals);
 
 void BodyForceGpu(ElementGroup& eg, CuVector<double>& b);
 

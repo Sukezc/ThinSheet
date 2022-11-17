@@ -131,6 +131,40 @@ __global__ void surface_force_zdirection_aux(double* b, const double* H, const d
 	}
 }
 
+__global__ void clampedfree_valsA_kernel(double* vals, const double* deltaS, const double* K, const double miu, const int n, const int logic)
+{
+	int i = threadIdx.x + blockDim.x * blockIdx.x;
+	// i = [n-1,1]
+	// data : i =        [n-1:1]
+	//result: i = 4||6 * [0:n-2]
+	if (i && i < n)
+	{
+		if (!logic)
+		{
+
+			double dSi = deltaS[i], dSi_1 = deltaS[i + 1], Ki = K[i];// miu = eg.viscosity;
+			vals[4 * (n - 1 - i)] = miu / 3.0 * 2.0 / dSi_1 / (dSi + dSi_1);
+			vals[4 * (n - 1 - i) + 1] = -miu / 3.0 * 2.0 / dSi / dSi_1 + 5.0 * miu / 6.0 * Ki * Ki;
+			vals[4 * (n - 1 - i) + 2] = miu / 3.0 * 2.0 / dSi / (dSi + dSi_1);
+			vals[4 * (n - 1 - i) + 3] = 4.0 * miu * Ki;
+		}
+	
+		else
+		{
+		
+			double dSi = deltaS[i], dSi_1 = deltaS[i + 1], Ki = K[i], Ki_1 = K[i + 1], Kip1 = K[i - 1];// miu = eg.viscosity;
+			vals[6 * (n - 1 - i)] = -miu / 2.0 * Ki * dSi / dSi_1 / (dSi_1 + dSi);
+			vals[6 * (n - 1 - i) + 1] = miu / 2.0 * Ki * (dSi - dSi_1) / dSi / dSi_1 + 5.0 * miu / 6.0 / dSi / dSi_1 / (dSi_1 + dSi) * (Kip1 * dSi_1 * dSi_1 - Ki_1 * dSi * dSi + Ki * (dSi * dSi - dSi_1 * dSi_1));
+			vals[6 * (n - 1 - i) + 2] = miu / 2.0 * Ki * dSi_1 / dSi / (dSi_1 + dSi);
+
+			vals[6 * (n - 1 - i) + 3] = -4.0 * miu * dSi / dSi_1 / (dSi + dSi_1);
+			vals[6 * (n - 1 - i) + 4] = 4.0 * miu * (dSi - dSi_1) / dSi / dSi_1;
+			vals[6 * (n - 1 - i) + 5] = 4.0 * miu * dSi_1 / dSi / (dSi_1 + dSi);
+		
+		}
+	}
+}
+
 extern "C"
 {
 	
@@ -249,7 +283,10 @@ extern "C"
 		switch (model.boundaryCondition)
 		{
 		case BoundaryCondition::ClampedFree:
-			if (ResetMatrix) ClampedFree(Egnew, vals, rowPtr, colInd); else ClampedFreeGpu(Egnew, vals, rowPtr, colInd); break;
+			if (ResetMatrix) { 
+				ClampedFree(Egnew, vals, rowPtr, colInd); 
+			}
+			else ClampedFreeGpu(Egnew, vals); break;
 		case BoundaryCondition::ClampedBoth:
 			//ClampedBoth(Egnew, vals, rowPtr, colInd); 
 			break;
@@ -265,7 +302,7 @@ extern "C"
 		}
 		else
 		{
-			reinterpret_cast<CusolverRfHandle*>(SolverHandle)->ResetAGpu(vals.data(CVD), rowPtr.data(CVD), colInd.data(CVD),vals.size(CVD),rowPtr.size(CVD));
+			reinterpret_cast<CusolverRfHandle*>(SolverHandle)->ResetAGpu(vals.data(CVD), vals.size(CVD));
 		}
 		
 		thrust::for_each(SolverHandle->X.begin(CVD), SolverHandle->X.end(CVD), []__device__(auto & it) { it = 0.0; });
@@ -331,102 +368,27 @@ extern "C"
 		
 	}
 
-	void ClampedFreeGpu(ElementGroup& eg, CuVector<double>& vals, CuVector<int>& rowPtr, CuVector<int>& colInd)
+	void ClampedFreeGpu(ElementGroup& eg, CuVector<double>& vals)
 	{
 	
 		long long n = eg.size - 1;
-		vals.erase(CVD); colInd.erase(CVD); rowPtr.erase(CVD);
-		vals.resize(10 * n - 2); colInd.resize(10 * n - 2); rowPtr.resize(2 * n + 3);
-		
-		
-		colInd.push_back(2 * n - 1);
-		colInd.push_back(2 * n);
-		colInd.push_back(2 * n + 1);
-		for (long long i = 1; i < n; i++)
-		{
-			colInd.push_back(i - 1);
-			colInd.push_back(i);
-			colInd.push_back(i + 1);
+		vals.resize(10 * n - 2); 
 
-			colInd.push_back(i + n + 1);
+		clampedfree_valsA_kernel << <(n + threads - 1) / threads, threads >> > (vals.data(CVD) + 3, eg.deltaSGroup.data(CVD), eg.KGroup.data(CVD), eg.viscosity, n, 0);
+		clampedfree_valsA_kernel << <(n + threads - 1) / threads, threads >> > (vals.data(CVD) + 4 * n + 3, eg.deltaSGroup.data(CVD), eg.KGroup.data(CVD), eg.viscosity, n, 1);
+		double dSn_2 = eg.deltaSGroup(2), dSn_1 = eg.deltaSGroup(1), H0 = eg.HGroup(0), H1 = eg.HGroup(1), H2 = eg.HGroup(2);
+		vals(0) = dSn_1 / dSn_2 / (dSn_1 + dSn_2) / H2;
+		vals(1) = (-dSn_1 - dSn_2) / dSn_1 / dSn_2 / H1;
+		vals(2) = (dSn_2 + 2.0 * dSn_1) / dSn_1 / (dSn_1 + dSn_2) / H0;
 
-		}
-		colInd.push_back(n - 2);
-		colInd.push_back(n - 1);
-		colInd.push_back(n);
+		// 4 * (n - 1) + 3 = 4 * n - 1
+		vals(4 * n - 1) = dSn_1 / dSn_2 / (dSn_1 + dSn_2) / H2 / H2 / H2;
+		vals(4 * n) = (-dSn_1 - dSn_2) / dSn_1 / dSn_2 / H1 / H1 / H1;
+		vals(4 * n + 1) = (dSn_2 + 2.0 * dSn_1) / dSn_1 / (dSn_1 + dSn_2) / H0 / H0 / H0;
 
-		//colInd.push_back(n + 1);
-		colInd.push_back(n);
-		for (long long i = 1; i < n; i++)
-		{
-			colInd.push_back(i - 1);
-			colInd.push_back(i);
-			colInd.push_back(i + 1);
-			//
-
-			colInd.push_back(i + n);
-			colInd.push_back(i + n + 1);
-			colInd.push_back(i + n + 2);
-		}
-		colInd.push_back(2 * n + 1);
-
-
-		long long sum = 0;
-		rowPtr.push_back(0);
-		sum += 3;
-		rowPtr.push_back(sum);
-		for (long long i = 0; i < n - 1; i++)
-		{
-			sum += 4;
-			rowPtr.push_back(sum);
-		}
-		sum += 3;
-		rowPtr.push_back(sum);
-
-		sum += 1;
-		rowPtr.push_back(sum);
-		for (long long i = 0; i < n - 1; i++)
-		{
-			//
-			sum += 6;
-			rowPtr.push_back(sum);
-		}
-		sum += 1;
-		rowPtr.push_back(sum);
-		
-
-		double dSn_2 = eg.deltaSGroup[2], dSn_1 = eg.deltaSGroup[1];
-		vals.push_back(dSn_1 / dSn_2 / (dSn_1 + dSn_2) / eg.HGroup[2]);
-		vals.push_back((-dSn_1 - dSn_2) / dSn_1 / dSn_2 / eg.HGroup[1]);
-		vals.push_back((dSn_2 + 2.0 * dSn_1) / dSn_1 / (dSn_1 + dSn_2) / eg.HGroup[0]);
-		for (long long i = n - 1; i > 0; i--)
-		{
-			double dSi = eg.deltaSGroup[i], dSi_1 = eg.deltaSGroup[i + 1], Ki = eg.KGroup[i], miu = eg.viscosity;
-			vals.push_back(miu / 3.0 * 2.0 / dSi_1 / (dSi + dSi_1));
-			vals.push_back(-miu / 3.0 * 2.0 / dSi / dSi_1 + 5.0 * miu / 6.0 * Ki * Ki);
-			vals.push_back(miu / 3.0 * 2.0 / dSi / (dSi + dSi_1));
-			vals.push_back(4.0 * miu * Ki);
-		}
-
-
-		vals.push_back(dSn_1 / dSn_2 / (dSn_1 + dSn_2) / eg.HGroup[2] / eg.HGroup[2] / eg.HGroup[2]);
-		vals.push_back((-dSn_1 - dSn_2) / dSn_1 / dSn_2 / eg.HGroup[1] / eg.HGroup[1] / eg.HGroup[1]);
-		vals.push_back((dSn_2 + 2.0 * dSn_1) / dSn_1 / (dSn_1 + dSn_2) / eg.HGroup[0] / eg.HGroup[0] / eg.HGroup[0]);
-
-		vals.push_back(1.0);
-		for (long long i = n - 1; i > 0; i--)
-		{
-			double dSi = eg.deltaSGroup[i], dSi_1 = eg.deltaSGroup[i + 1], Ki = eg.KGroup[i], Ki_1 = eg.KGroup[i + 1], Kip1 = eg.KGroup[i - 1], miu = eg.viscosity;
-			vals.push_back(-miu / 2.0 * Ki * dSi / dSi_1 / (dSi_1 + dSi));
-			vals.push_back(miu / 2.0 * Ki * (dSi - dSi_1) / dSi / dSi_1 + 5.0 * miu / 6.0 / dSi / dSi_1 / (dSi_1 + dSi) * (Kip1 * dSi_1 * dSi_1 - Ki_1 * dSi * dSi + Ki * (dSi * dSi - dSi_1 * dSi_1)));
-			vals.push_back(miu / 2.0 * Ki * dSi_1 / dSi / (dSi_1 + dSi));
-
-			vals.push_back(-4.0 * miu * dSi / dSi_1 / (dSi + dSi_1));
-			vals.push_back(4.0 * miu * (dSi - dSi_1) / dSi / dSi_1);
-			vals.push_back(4.0 * miu * dSi_1 / dSi / (dSi_1 + dSi));
-		}
-		vals.push_back(1.0);
-
+		vals(4 * n + 2) = 1.0;
+		vals(10 * n - 3) = 1.0;
+		cudaDeviceSynchronize();
 	}
 
 	void BodyForceGpu(ElementGroup& eg, CuVector<double>& b)

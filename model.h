@@ -104,7 +104,7 @@ struct ModelConf
 		slabLength((size_t(_grid_num) - 1)* deltaS_value),SaveEveryXY(true), recordInterval(0),g(9.8),omegaStandard(_grid_num-1,0),velocityStandard(_grid_num-1,velocity),
 		dampingrate(1e-3), dampingrate_copy(1e-3),criticalangle(-0.25),dampSearch(1), dampSearchResolventCount(1),criticalAngleRange(0.0,0.0), criticalRangeCount(0), criticalAngleSegment(1),
 		boundaryCondition(BoundaryCondition::ClampedFree), forceCondition(ForceCondition::SurfaceAndBodyForce),
-		solver(Solver::RF),solution(Solution::LU),simulation(SimulateType::Bend),extrudepolicy(ExtrudePolicy::Sparse), lithosphereTop(-1e4), lithosphereBottom(-1.3e5)
+		solver(Solver::RF),solution(Solution::LU),simulation(SimulateType::Bend),extrudepolicy(ExtrudePolicy::Sparse), lithosphereTop(-1e4), lithosphereBottom(-1.8e5)
 	{
 	}
 
