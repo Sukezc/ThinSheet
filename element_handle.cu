@@ -1,4 +1,6 @@
 #include"element_handle.h"
 
-std::vector<double> ElementGroup::GravityTorqueGroup;
-std::vector<double> ElementGroup::PforceTorqueGroup;
+CuVector<double> ElementGroup::GravityTorqueGroup;
+CuVector<double> ElementGroup::PforceTorqueGroup;
+
+

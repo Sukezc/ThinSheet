@@ -121,6 +121,11 @@ public:
 	using value_type = dataType;
 	using size_type = size_t;
 
+	operator std::vector<dataType>()
+	{
+		return std::vector<dataType>(Hvec.begin(), Hvec.end());
+	}
+
 	void send() {
 		Dvec = Hvec;
 	}
@@ -268,6 +273,10 @@ public:
 		Hvec.clear();
 	}
 
+	void clear(int) noexcept
+	{
+		Dvec.clear();
+	}
 
 	template<typename Iterator>
 	Iterator erase(Iterator left, Iterator right)

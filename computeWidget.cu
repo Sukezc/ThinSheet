@@ -38,20 +38,24 @@ void computeKernel(bool saveFlag, ElementGroup& Egold, ElementGroup& Egnew, Solv
 	model.ResetGridAndIterating();
 }
 
+
 void computeKernelGpu(bool saveFlag, ElementGroup& Egold, ElementGroup& Egnew, SolverInterface* SolverHandle, ModelConf& model, std::ofstream& outfile_xy, std::ofstream& outfile_force)
 {
 	ElementGroup::InitializeTorqueGroup(model.num_iterate);
 	bool ResetMatrix;
 	//Egold = ElementGroup(model); Egnew = ElementGroup(model);
 	bool GpuSwitch = true;
+	
 	for (int i = model.extrudepolicy.iterating; i < model.num_iterate; i++)
 	{
-		if (model.grid_num < 128)
+		//std::cout << i << std::endl;
+		if (model.grid_num < 256)
 		{
 			ResetMatrix = Elongate(Egold, Egnew, model);
 			if (i == model.extrudepolicy.iterating - 1)ResetMatrix = true;
 			deltaS_iterate(Egold, Egnew, model.dt);
 			theta_iterate(Egold, Egnew, model.dt);
+			//std::cout << Egnew.ComputeAverageTheta() << std::endl;
 			H_iterate(Egold, Egnew, model.dt);
 			K_iterate(Egnew);
 			density_iterate(Egnew, model);
@@ -60,47 +64,54 @@ void computeKernelGpu(bool saveFlag, ElementGroup& Egold, ElementGroup& Egnew, S
 			Omega_Delta_iterate(Egnew, model, SolverHandle, ResetMatrix);
 			omega_iterate(Egnew, model);
 			velocity_iterate(Egnew, model);
-			if (saveFlag)computeSave(Egnew, model, outfile_xy, outfile_force);
+			if (saveFlag) { 
+				Egnew.ComputeXY().ComputeGravityTorque(i).ComputePforceTorque(i);
+				computeSave(Egnew, model, outfile_xy, outfile_force); 
+			}
 		}
 		else
 		{
 			if (GpuSwitch)
 			{
 				Egnew.sendAll(); Egold.sendAll();
+				ElementGroup::GravityTorqueGroup.send();
+				ElementGroup::PforceTorqueGroup.send();
 				GpuSwitch = false;
+				std::cout << "change platform" << std::endl;
 			}
 			ResetMatrix = ElongateGpu(Egold, Egnew, model);
 			if (i == model.extrudepolicy.iterating - 1)ResetMatrix = true;
-
+			
 			deltaS_iterate_gpu(Egold, Egnew, model.dt);
 			theta_iterate_gpu(Egold, Egnew, model.dt);
 			H_iterate_gpu(Egold, Egnew, model.dt);
 			deltaS_theta_H_synchronize(Egnew);
-
+			
+			
+			//std::cout << Egnew.ComputeAverageTheta(CVD) << std::endl;
 			K_iterate_gpu(Egnew);
 			density_iterate_gpu(Egnew, model);
 			bodyforce_compute_gpu(Egnew);
 			K_density_bodyforce_synchronize(Egnew);
-
+			
 			surface_force_iterate_gpu(Egnew, model, i);
 			Omega_Delta_iterate_gpu(Egnew, model, SolverHandle, ResetMatrix);
+			
 			omega_velocity_iterate_gpu(Egnew, model,SolverHandle);
-			if (saveFlag)computeSaveGpu(Egnew, model, outfile_xy, outfile_force);
-		}
-		//std::cout << Egnew.velocityGroup.back() << " " << Egnew.velocityGroup.Dvec.back() << std::endl;
-		Egnew.ComputeXY().ComputeGravityTorque(i).ComputePforceTorque(i);
-		
-		if (model.SaveEveryXY)
-		{
-			Egnew.ComputeXY().ComputeGravityTorque(i).ComputePforceTorque(i);
-			if (saveFlag) Egnew.SaveXY(outfile_xy).SaveForce(outfile_force);
-		}
-		else if (!(i % model.recordInterval))
-		{
-			Egnew.ComputeXY().ComputeGravityTorque(i).ComputePforceTorque(i);
-			if (saveFlag) Egnew.SaveXY(outfile_xy).SaveForce(outfile_force);
+			//std::cout << i << std::endl;
+			if (saveFlag) { 
+				Egnew.ComputeGravityTorque(i, CVD).ComputePforceTorque(i, CVD);
+				computeSaveGpu(Egnew, model, outfile_xy, outfile_force); 
+			}
 		}
 		std::swap(Egold, Egnew);
+	}
+	/*std::cout << thrust::reduce(ElementGroup::PforceTorqueGroup.begin(CVD), ElementGroup::PforceTorqueGroup.end(CVD)) << "\n";
+	std::cout << thrust::reduce(ElementGroup::GravityTorqueGroup.begin(CVD), ElementGroup::GravityTorqueGroup.end(CVD));*/
+	if (!GpuSwitch)
+	{
+		ElementGroup::PforceTorqueGroup.fetch();
+		ElementGroup::GravityTorqueGroup.fetch();
 	}
 	model.ResetGridAndIterating();
 }

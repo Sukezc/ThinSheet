@@ -2,7 +2,6 @@
 author:zhang_chuanzhe
 coding with: utf-8
 email:191830203@smail.nju.edu.cn
-last modify date:2022.10.31
 */
 
 
@@ -21,62 +20,62 @@ last modify date:2022.10.31
 #include<ctime>
 #include<iostream>
 
-int main()
-{
-	
-	//CuVector<int> a(10,10);
-	//a.resize(10, 10);
-	//a.erase(a.begin(), a.end());
-	////CuVector<int> a(10,1);
-	////a.resizeWithSend(20, 20);
-	////int i = thrust::count(a.begin(0), a.end(0), 1);
-	////for (auto it = test.begin(); it != test.end(); it++)cout << *it << std::endl;
-	//return 0;
-
-	CusolverRfHandle solver;
-	std::vector<int> csrrowptrA = {0,2,5,7,9};
-	std::vector<int> csrcolindA = {0,3,1,2,3,0,1,2,3};
-	std::vector<double> csrvalA = {1,2,3,4,1,1,2,1,2};
-	std::vector<double> b = { 1,2,3,4 };
-	solver.Initialize(csrvalA.data(), csrrowptrA.data(), csrcolindA.data(),csrvalA.size(),csrrowptrA.size());
-	for (auto& it : solver.csrRowPtrA.Hvec)std::cout << it << " ";
-	std::cout << std::endl;
-	solver.loadB(b.data(),b.size());
-	
-	solver.solve();
-	
-	for (int i = 0; i < solver.X.size(CVD); i++)std::cout << solver.X(i) << " ";
-	csrvalA = { 1,2,3,4,1,1,2,10,12 };
-	std::cout << std::endl;
-	solver.ResetA(csrvalA.data(), csrvalA.size());
-	//solver.csrColIndA.Hvec = csrcolindA;
-	//solver.csrRowPtrA.Hvec = csrrowptrA;
-	//solver.csrColIndA.send(); solver.csrRowPtrA.send();
-	solver.loadB(b.data(), b.size());
-	//for (int i = 0; i < solver.csrValA.size(CVD); i++)std::cout << solver.csrValA(i) <<" ";
-	std::cout << std::endl;
-	//for (int i = 0; i < solver.csrRowPtrA.size(CVD); i++)std::cout << solver.csrRowPtrA(i) << " ";
-	std::cout << std::endl;
-	//for (int i = 0; i < solver.csrColIndA.size(CVD); i++)std::cout << solver.csrColIndA(i) << " ";
-	std::cout << std::endl;
-	
-	solver.csrRowPtrA.fetch();
-	for (auto& it : solver.csrRowPtrA.Hvec)std::cout << it << " ";
-	std::cout << std::endl;
-	solver.solve();
-	solver.X.fetch();
-	for (auto& it : solver.X.Hvec)std::cout << it << " ";
-	std::cout << std::endl;
-
-	solver.Reset();
-	solver.Initialize(csrvalA.data(), csrrowptrA.data(), csrcolindA.data(), csrvalA.size(), csrrowptrA.size());
-	solver.loadB(b.data(), b.size());
-	solver.solve();
-	std::cout << std::endl;
-	for (int i = 0; i < solver.X.size(CVD); i++)std::cout << solver.X(i) << std::endl;
-
-	return 0;
-}
+//int main()
+//{
+//	
+//	//CuVector<int> a(10,10);
+//	//a.resize(10, 10);
+//	//a.erase(a.begin(), a.end());
+//	////CuVector<int> a(10,1);
+//	////a.resizeWithSend(20, 20);
+//	////int i = thrust::count(a.begin(0), a.end(0), 1);
+//	////for (auto it = test.begin(); it != test.end(); it++)cout << *it << std::endl;
+//	//return 0;
+//
+//	CusolverRfHandle solver;
+//	std::vector<int> csrrowptrA = {0,2,5,7,9};
+//	std::vector<int> csrcolindA = {0,3,1,2,3,0,1,2,3};
+//	std::vector<double> csrvalA = {1,2,3,4,1,1,2,1,2};
+//	std::vector<double> b = { 1,2,3,4 };
+//	solver.Initialize(csrvalA.data(), csrrowptrA.data(), csrcolindA.data(),csrvalA.size(),csrrowptrA.size());
+//	for (auto& it : solver.csrRowPtrA.Hvec)std::cout << it << " ";
+//	std::cout << std::endl;
+//	solver.loadB(b.data(),b.size());
+//	
+//	solver.solve();
+//	
+//	for (int i = 0; i < solver.X.size(CVD); i++)std::cout << solver.X(i) << " ";
+//	csrvalA = { 1,2,3,4,1,1,2,10,12 };
+//	std::cout << std::endl;
+//	solver.ResetA(csrvalA.data(), csrvalA.size());
+//	//solver.csrColIndA.Hvec = csrcolindA;
+//	//solver.csrRowPtrA.Hvec = csrrowptrA;
+//	//solver.csrColIndA.send(); solver.csrRowPtrA.send();
+//	solver.loadB(b.data(), b.size());
+//	//for (int i = 0; i < solver.csrValA.size(CVD); i++)std::cout << solver.csrValA(i) <<" ";
+//	std::cout << std::endl;
+//	//for (int i = 0; i < solver.csrRowPtrA.size(CVD); i++)std::cout << solver.csrRowPtrA(i) << " ";
+//	std::cout << std::endl;
+//	//for (int i = 0; i < solver.csrColIndA.size(CVD); i++)std::cout << solver.csrColIndA(i) << " ";
+//	std::cout << std::endl;
+//	
+//	solver.csrRowPtrA.fetch();
+//	for (auto& it : solver.csrRowPtrA.Hvec)std::cout << it << " ";
+//	std::cout << std::endl;
+//	solver.solve();
+//	solver.X.fetch();
+//	for (auto& it : solver.X.Hvec)std::cout << it << " ";
+//	std::cout << std::endl;
+//
+//	solver.Reset();
+//	solver.Initialize(csrvalA.data(), csrrowptrA.data(), csrcolindA.data(), csrvalA.size(), csrrowptrA.size());
+//	solver.loadB(b.data(), b.size());
+//	solver.solve();
+//	std::cout << std::endl;
+//	for (int i = 0; i < solver.X.size(CVD); i++)std::cout << solver.X(i) << std::endl;
+//
+//	return 0;
+//}
 
 //__global__ void test1(int* a,int val)
 //{
@@ -92,13 +91,14 @@ int main()
 //	return 0;
 //}
 
-int mn(int argc, char* argv[])
+int main(int argc, char* argv[])
 {
 	ModelConf model;
 	if (argc != 2) 
-	{ 
-		exit(-1); 
+	{
 		std::cout << "Wrong arguments!" << std::endl;
+		exit(-1); 
+		
 	}
 	std::ifstream fin(argv[1]);
 	model.load_parameter(fin);
@@ -110,8 +110,8 @@ int mn(int argc, char* argv[])
 	
 	REGISTER(CusolverRfHandle)
 	//REGISTER(CusolverSpHandle)
-	SolverInterface* SolverHandle = NULL;
-
+	SolverInterface* SolverHandle = nullptr;
+	
 	if (model.solver == Solver::RF) SolverHandle = ObjFactory::Instance().CreateObj<SolverInterface>("CusolverRfHandle");
 	/*else if (model.solver == Solver::SP) 
 	{
@@ -130,7 +130,7 @@ int mn(int argc, char* argv[])
 	//computeCriticalAngleRegressionBasedOnInnerProduct(argv[1],dampRate_innerProduct,Egold,Egnew,SolverHandle,model);
 	//std::string dir = std::to_string(fabs(model.criticalangle));
 	
-	std::string dir = "AngleFileTest";
+	std::string dir = "outdata";
 	system((mkdir + " " + dir).c_str());
 	system((copy + " " + "Conf.xml" + " " + dir).c_str());
 	std::ofstream outfile_xy(dir + "/" + model.XYaddress);
@@ -138,14 +138,24 @@ int mn(int argc, char* argv[])
 	std::ofstream outfile_Torque(dir + "/" + model.Torqueaddress);
 	//computeKernelGpu(true, Egold, Egnew, SolverHandle, model,outfile_xy, outfile_force);
 	//computeCreateAngleInitFile(20.0, 6.5e5, SolverHandle, model, "20.dat");
-	fin.open(argv[1]);
-	computeLoadAngleInitFile(20.0,Egold, Egnew, model, fin, "20.dat");
+	//fin.open(argv[1]);
+	//computeLoadAngleInitFile(20.0,Egold, Egnew, model, fin, "20.dat");
+	//std::ofstream outfile_placehold;
 	//std::cout << Egold.velocityGroup.front() << "  " << Egold.velocityGroup.back() << std::endl;
+	Egold = ElementGroup(model); Egnew = ElementGroup(model);
+	//std::cout << model.grid_num << std::endl;
 	computeKernel(true, Egold, Egnew, SolverHandle, model, outfile_xy, outfile_force);
+	
 	vector_save(ElementGroup::GravityTorqueGroup, outfile_Torque);
 	vector_save(ElementGroup::PforceTorqueGroup, outfile_Torque);
-	fin.close();
+	//fin.close();
+	
+	outfile_xy.close();
+	outfile_force.close();
+	outfile_Torque.close();
+	//std::cout << "out" << std::endl;
 	delete SolverHandle;
+	
 	return 0;
 
 }

@@ -12,6 +12,7 @@
 #include<iostream>
 #include<thrust/transform.h>
 #include<thrust/reduce.h>
+#include<thrust/inner_product.h>
 
 
 
@@ -98,8 +99,9 @@ public:
 	CuVector<double> DeltaGroup;
 
 	//describe the Torque
-	static std::vector<double> GravityTorqueGroup;
-	static std::vector<double> PforceTorqueGroup;
+	static CuVector<double> GravityTorqueGroup;
+	static CuVector<double> PforceTorqueGroup;
+
 
 	//describe the valid data
 	long long size;
@@ -177,6 +179,7 @@ public:
 		{
 			(ptr + i)->send();
 		}
+		
 		return *this;
 	}
 
@@ -188,6 +191,45 @@ public:
 			(ptr + i)->fetch();
 		}
 		return *this;
+	}
+
+	void debug()
+	{
+		std::cout << "deltaS: " <<
+			std::accumulate(deltaSGroup.begin(), deltaSGroup.end(), 0.0) / deltaSGroup.size()
+			<< "\n";
+		std::cout << "H: " <<
+			std::accumulate(HGroup.begin(), HGroup.end(), 0.0) / HGroup.size()
+			<< "\n";
+		std::cout<<"theta: "<<
+			std::accumulate(thetaGroup.begin(), thetaGroup.end(), 0.0) / thetaGroup.size()
+			<< "\n";
+	}
+
+	void debug(int)
+	{
+		std::cout << "deltaS: " <<
+			thrust::reduce(deltaSGroup.begin(CVD), deltaSGroup.end(CVD), 0.0) / deltaSGroup.size(CVD)
+			<< "\n";
+		std::cout << "H: " <<
+			thrust::reduce(HGroup.begin(CVD), HGroup.end(CVD), 0.0) / HGroup.size(CVD)
+			<< "\n";
+		std::cout << "theta: " <<
+			thrust::reduce(thetaGroup.begin(CVD), thetaGroup.end(CVD), 0.0) / thetaGroup.size(CVD)
+			<< "\n";
+		std::cout << "velocity: " <<
+			thrust::reduce(velocityGroup.begin(CVD), velocityGroup.end(CVD), 0.0) / velocityGroup.size(CVD)
+			<< "\n";
+		std::cout << "omega: " <<
+			thrust::reduce(omegaGroup.begin(CVD), omegaGroup.end(CVD), 0.0) / omegaGroup.size(CVD)
+			<< "\n";
+		std::cout << "Omega: " <<
+			thrust::reduce(OmegaGroup.begin(CVD), OmegaGroup.end(CVD), 0.0) / OmegaGroup.size(CVD)
+			<< "\n";
+		std::cout << "Delta: " <<
+			thrust::reduce(DeltaGroup.begin(CVD), DeltaGroup.end(CVD), 0.0) / DeltaGroup.size(CVD)
+			<< "\n";
+			
 	}
 
 	ElementGroup& elongate(double deltaS_value, double H_value, double velocity_value,int num = 1)
@@ -257,7 +299,9 @@ public:
 	static void	InitializeTorqueGroup(int num_iterate)
 	{
 		ElementGroup::GravityTorqueGroup.clear();
+		ElementGroup::GravityTorqueGroup.clear(CVD);
 		ElementGroup::PforceTorqueGroup.clear();
+		ElementGroup::PforceTorqueGroup.clear(CVD);
 		ElementGroup::GravityTorqueGroup.resize(num_iterate, 0.0);
 		ElementGroup::PforceTorqueGroup.resize(num_iterate, 0.0);
 	}
@@ -285,6 +329,13 @@ public:
 		return *this;
 	}
 
+	ElementGroup& ComputeGravityTorque(int iterating,int)
+	{	
+		GravityTorqueGroup(GravityTorqueGroup.size(CVD) - iterating - 1) = thrust::inner_product(GravityGroup.rbegin(CVD), GravityGroup.rend(CVD), XGroup.rbegin(CVD), 0.0);
+		//std::cout <<"gravityTorque:" << gravityTorque << std::endl;
+		return *this;
+	}
+
 	double GetGravityTorque(int iterating)
 	{
 		return GravityTorqueGroup[GravityTorqueGroup.size() - iterating - 1];
@@ -302,6 +353,16 @@ public:
 		return *this;
 	}
 
+	ElementGroup& ComputePforceTorque(int iterating,int)
+	{
+		static thrust::device_vector<double> tempP, thrust::device_vector<double> tempXY;
+		tempP.resize(size); tempXY.resize(size);
+		thrust::transform(PupGroup.rbegin(CVD), PupGroup.rend(CVD), PdownGroup.rbegin(CVD), tempP.rbegin(), thrust::minus<double>());
+		thrust::transform(XGroup.rbegin(CVD), XGroup.rend(CVD), YGroup.rbegin(CVD), tempXY.rbegin(), [=]__device__(auto & it1, auto & it2) { return pow(it1 * it1 + it2 * it2, 0.5); });
+		PforceTorqueGroup(PforceTorqueGroup.size(CVD) - iterating - 1) = thrust::inner_product(tempP.begin(), tempP.end(), tempXY.begin(), 0.0);
+		return *this;
+	}
+
 	double GetPforceTorque(int iterating)
 	{
 		return PforceTorqueGroup[PforceTorqueGroup.size() - iterating - 1];
@@ -311,6 +372,12 @@ public:
 	{
 		ComputeSlabLength();
 		return std::inner_product(thetaGroup.begin() + 1, thetaGroup.end(), deltaSGroup.begin() + 1, 0.0) / slabLength;
+	}
+
+	double ComputeAverageTheta(int)
+	{
+		ComputeSlabLength(CVD);
+		return thrust::inner_product(thetaGroup.begin(CVD) + 1, thetaGroup.end(CVD), deltaSGroup.begin(CVD) + 1, 0.0) / slabLength;
 	}
 
 	ElementGroup& ComputeXY()
@@ -402,7 +469,7 @@ public:
 	{
 		GravityGroupCos.fetch(); PupGroup.fetch(); PdownGroup.fetch();
 		vector_save(GravityGroupCos, outfile);
-		vector_save_pred(PupGroup, PdownGroup, [](auto& it1, auto& it2) { return fabs(it1) + fabs(it2); }, outfile);
+		vector_save_pred(PupGroup, PdownGroup, [=](auto& it1, auto& it2) { return fabs(it1) + fabs(it2); }, outfile);
 		vector_save(PupGroup, outfile);
 		vector_save(PdownGroup, outfile);
 		outfile << "\n";

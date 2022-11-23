@@ -144,6 +144,9 @@ void surface_force_iterate(ElementGroup& eg, ModelConf& model, int iterating)
 
 	if(std::max(pipePIdxBottom, pipePIdxMax) > start)start = std::max(pipePIdxBottom, pipePIdxMax);
 	
+	/*const gsl_multiroot_fsolver_type* T = gsl_multiroot_fsolver_hybrid;
+	gsl_multiroot_fsolver* s = gsl_multiroot_fsolver_alloc(T, 2);*/
+
 
 	//DEPRECATED
 	double pressure = model.pipePressure; for (long long i = pipePIdxTop; i >= pipePIdxBottom; i--) { eg.PupGroup[i] = pressure; }
