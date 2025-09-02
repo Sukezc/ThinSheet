@@ -95,7 +95,6 @@ struct ModelConf
 	std::string Torqueaddress;
 
 
-
 	ModelConf(int _grid_num = 0, int _num_iterate = 0, double H_value = 0.0, double deltaS_value = 0.0, double velocity_value = 0.0, double _viscosity = 0.0, double _Mviscosity = 0.0, double _density = 0.0,
 		double Omega_value = 0.0, double Delta_value = 0.0, double omega_value = 0.0, double K_value = 0.0, double theta_value = 0.0, double _dt = 0.0) :
 		grid_num(_grid_num),grid_num_copy(_grid_num),H(H_value), deltaS(deltaS_value), velocity(velocity_value),upperVelocity(0.0), pipePressure(1e8), pipePressurerate(1.0),
@@ -110,7 +109,6 @@ struct ModelConf
 
 	void Standardize()
 	{
-		static int i = 0;
 		if (boundaryCondition == BoundaryCondition::ClampedFree)
 		{
 			this->omegaStandard.first = (long long)this->grid_num - 1;
@@ -159,6 +157,8 @@ struct ModelConf
 			std::cout << "Ds:" << extrudepolicy.Ds << "\n";
 			std::cout << "DsEnd:" << extrudepolicy.DsEnd << "\n";
 		}
+
+		std::cout << "GridNum:" << grid_num << "\n";
 
 		auto i = forceCondition;
 		switch (i)
@@ -238,8 +238,9 @@ struct ModelConf
 		boundaryCondition = BoundaryConditionSelecter[root["BoundaryCondition"].text()];
 		simulation = SimulateTypeSelecter[root["StimulateType"].text()];
 		forceCondition = ForceConditionSelecter[root["ForceCondition"].text()];
-
 		
+
+
 		criticalangle = std::stod(root["CriticalAngle"].text());
 		criticalRangeCount = std::stoi(root["CriticalAngleRangeCount"].text());
 		criticalAngleRange.first = std::stod(root["CriticalAngleRangeLeft"].text());

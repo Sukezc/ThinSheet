@@ -11,6 +11,7 @@ void computeKernel(bool saveFlag, ElementGroup& Egold, ElementGroup& Egnew, Solv
 	bool ResetMatrix;
 	for (int i = model.extrudepolicy.iterating; i < model.num_iterate; i++)
 	{
+		std::cout << i << std::endl;
 		ResetMatrix = Elongate(Egold, Egnew, model);
 		if (i == model.extrudepolicy.iterating - 1)ResetMatrix = true;
 		deltaS_iterate(Egold, Egnew, model.dt);
@@ -38,6 +39,40 @@ void computeKernel(bool saveFlag, ElementGroup& Egold, ElementGroup& Egnew, Solv
 	model.ResetGridAndIterating();
 }
 
+void computeKernel_FibreStress(bool saveFlag, ElementGroup& Egold, ElementGroup& Egnew, SolverInterface* SolverHandle, ModelConf& model, std::ofstream& outfile_xy, std::ofstream& outfile_force,std::ofstream& outfile_fibrestress)
+{
+	ElementGroup::InitializeTorqueGroup(model.num_iterate);
+	//Egold = ElementGroup(model); Egnew = ElementGroup(model);
+	bool ResetMatrix;
+	for (int i = model.extrudepolicy.iterating; i < model.num_iterate; i++)
+	{
+		std::cout << i  << std::endl;
+		ResetMatrix = Elongate(Egold, Egnew, model);
+		if (i == model.extrudepolicy.iterating - 1)ResetMatrix = true;
+		deltaS_iterate(Egold, Egnew, model.dt);
+		theta_iterate(Egold, Egnew, model.dt);
+		H_iterate(Egold, Egnew, model.dt);
+		K_iterate(Egnew);
+		density_iterate(Egnew, model);
+		bodyforce_compute(Egnew);
+		surface_force_iterate(Egnew, model, i);
+		Omega_Delta_iterate(Egnew, model, SolverHandle, ResetMatrix);
+		omega_iterate(Egnew, model);
+		velocity_iterate(Egnew, model);
+		if (model.SaveEveryXY)
+		{
+			Egnew.ComputeXY().ComputeGravityTorque(i).ComputePforceTorque(i).ComputeFibreStress();
+			if (saveFlag) Egnew.SaveXY(outfile_xy).SaveForce(outfile_force).SaveFibreStress(outfile_fibrestress);
+		}
+		else if (!(i % model.recordInterval))
+		{
+			Egnew.ComputeXY().ComputeGravityTorque(i).ComputePforceTorque(i);
+			if (saveFlag) Egnew.SaveXY(outfile_xy).SaveForce(outfile_force);
+		}
+		std::swap(Egold, Egnew);
+	}
+	model.ResetGridAndIterating();
+}
 
 void computeKernelGpu(bool saveFlag, ElementGroup& Egold, ElementGroup& Egnew, SolverInterface* SolverHandle, ModelConf& model, std::ofstream& outfile_xy, std::ofstream& outfile_force)
 {
@@ -48,7 +83,7 @@ void computeKernelGpu(bool saveFlag, ElementGroup& Egold, ElementGroup& Egnew, S
 	
 	for (int i = model.extrudepolicy.iterating; i < model.num_iterate; i++)
 	{
-		//std::cout << i << std::endl;
+		std::cout << i << std::endl;
 		if (model.grid_num < 256)
 		{
 			ResetMatrix = Elongate(Egold, Egnew, model);
@@ -344,18 +379,21 @@ void computeCreateAngleInitFile(double Angle,double LengthExpected, SolverInterf
 	}
 }
 
-void computeLoadAngleInitFile(double Angle,ElementGroup& Egold, ElementGroup& Egnew, ModelConf& model,std::ifstream& fin,const std::string& FileName)
+void computeLoadAngleInitFile(double Angle,ElementGroup& Egold, ElementGroup& Egnew, ModelConf& model,const std::string& FileName)
 {
-	model.load_parameter(fin);
-	model.process_parameter();
-	double velocity = model.velocity;
-	ElementGroup::LoadState(&Egold, &Egnew, &model, FileName);
+	ModelConf tempModel;
+	ElementGroup::LoadState(&Egold, &Egnew, &tempModel, FileName);
 	auto theta_it = std::find_if(Egold.thetaGroup.rbegin(), Egold.thetaGroup.rend(), [=](auto& it) {return fabs(it) / PI * 180 > Angle; });
 	auto velocity_it = Egold.velocityGroup.rbegin() + std::distance(Egold.thetaGroup.rbegin(), theta_it);
 	std::for_each(theta_it + 1, Egold.thetaGroup.rend(), [=](auto& it) {it = *theta_it; });
 	std::for_each(velocity_it + 1, Egold.velocityGroup.rend(), [=](auto& it) {it = *velocity_it; });
-	double velocity_rate = velocity / Egold.velocityGroup.back();
+	double velocity_rate = model.velocity / Egold.velocityGroup.back();
 	std::for_each(Egold.velocityGroup.begin(), Egold.velocityGroup.end(), [=](auto& it) {it *= velocity_rate; });
+	model.grid_num = tempModel.grid_num;
+	model.grid_num_copy = tempModel.grid_num_copy;
+	model.slabLength = Egold.ComputeSlabLength().slabLength;
+	model.deltaS = model.slabLength / size_t(model.grid_num) - 1;
+	model.process_parameter();
 }
 
 void computeSave(ElementGroup& Egnew, ModelConf& model, std::ofstream& outfile_xy, std::ofstream& outfile_force)

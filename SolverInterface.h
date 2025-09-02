@@ -12,6 +12,6 @@ public:
 	virtual void loadB(const double* b) = 0;
 	virtual void ResetA(const double* csrval) = 0;
 	virtual void Reset() = 0;
-	CuVector<double> X;
+	virtual void* getContainer() = 0;
 };
 

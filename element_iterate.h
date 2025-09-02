@@ -1,5 +1,6 @@
 #pragma once
 #include"model.h"
+#include"SolverInterface.h"
 #include"element_handle.h"
 #include"element_iterate_gpu.h"
 #include<cmath>
@@ -50,6 +51,8 @@ void fluids_pressure_set(ElementGroup& eg,ModelConf& model,long long start,dampf
 	}
 	eg.PupGroup[0] = eg.PupGroup[1]; eg.PdownGroup[0] = eg.PdownGroup[1];
 }
+
+void shear_stress_set(ElementGroup& eg, ModelConf& model);
 
 //5-
 void surface_force_iterate(ElementGroup& eg, ModelConf& model, int iterating);
@@ -427,54 +430,7 @@ void SurfaceAndBodyForce(ElementGroup& eg, Container& b)
 }
 
 //5
-template<class handle>
-void Omega_Delta_iterate(ElementGroup& eg,ModelConf& model, handle& SolverHandle, bool ResetMatrix)
-{
-	//the number of length element
-	long long n = eg.size - 1;
-	static std::vector<double> vals;  static std::vector<double> b; static std::vector<int> rowPtr; static std::vector<int> colInd;
-
-	switch (model.boundaryCondition)
-	{
-	case BoundaryCondition::ClampedFree:
-		ClampedFree(eg, vals, rowPtr, colInd); break;
-	case BoundaryCondition::ClampedBoth:
-		ClampedBoth(eg, vals, rowPtr, colInd); break;
-	default:
-		break;
-	}
-	switch (model.forceCondition)
-	{
-	case ForceCondition::BodyForceOnly:
-		BodyForceOnly(eg, b); break;
-	case ForceCondition::SurfaceAndBodyForce:
-		SurfaceAndBodyForce(eg, b); break;
-	case ForceCondition::SurfaceForceOnly:
-		SurfaceForceOnly(eg, b); break;
-	default:
-		break;
-	}
-
-	
-	if (ResetMatrix)
-	{
-		SolverHandle->Reset();
-		SolverHandle->Initialize(vals.data(), rowPtr.data(), colInd.data(),vals.size(),rowPtr.size());
-	}
-	else
-	{
-		SolverHandle->ResetA(vals.data());
-	}
-	SolverHandle->loadB(b.data());
-	SolverHandle->solve();
-	SolverHandle->X.fetch();
-	for (long long i = n; i >= 0; i--)
-	{
-		long long j = n - i; double H = eg.HGroup[i];
-		eg.OmegaGroup[i] = SolverHandle->X[j] / H / H / H;
-		eg.DeltaGroup[i] = SolverHandle->X[j + n + 1] / H;
-	}
-}
+void Omega_Delta_iterate(ElementGroup& eg, ModelConf& model, SolverInterface* SolverHandle, bool ResetMatrix);
 
 //{6,7}
 void omega_iterate(ElementGroup& eg, ModelConf& model);

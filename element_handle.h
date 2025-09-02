@@ -98,10 +98,13 @@ public:
 	//rate of stretching
 	CuVector<double> DeltaGroup;
 
-	//describe the Torque
+	//decribe the resultant of the fibre stress
+	CuVector<double> FibreStressGroup;
+
+	//describe the Torque and some physical value
 	static CuVector<double> GravityTorqueGroup;
 	static CuVector<double> PforceTorqueGroup;
-
+	
 
 	//describe the valid data
 	long long size;
@@ -158,7 +161,7 @@ public:
 		densityGroup(model.grid_num, model.density),
 		GravityGroup(model.grid_num, model.density* model.H * model.g),
 		GravityGroupCos(model.grid_num,model.density*model.H * model.g),
-		GravityGroupSin(model.grid_num,0.0),
+		GravityGroupSin(model.grid_num,0.0),FibreStressGroup(model.grid_num,0.0),
 		PupGroup(model.grid_num, 0.0), PdownGroup(model.grid_num, 0.0), TupGroup(model.grid_num, 0.0), TdownGroup(model.grid_num, 0.0),
 		size(model.grid_num), slabLength(model.grid_num* model.deltaS - model.deltaS), U0(model.velocity), viscosity(model.viscosity), g(model.g), density(model.density),
 		XGroup(model.grid_num, 0.0), YGroup(model.grid_num, 0.0)
@@ -258,6 +261,7 @@ public:
 			GravityGroup.push_back(0.0);
 			GravityGroupCos.push_back(0.0); GravityGroupSin.push_back(0.0);
 			XGroup.push_back(0.0); YGroup.push_back(0.0);
+			FibreStressGroup.push_back(0.0);
 			slabLength += deltaS_value; size += 1;
 		}
 		
@@ -290,6 +294,7 @@ public:
 			GravityGroup.push_back(0.0,CVD);
 			GravityGroupCos.push_back(0.0,CVD); GravityGroupSin.push_back(0.0,CVD);
 			XGroup.push_back(0.0,CVD); YGroup.push_back(0.0,CVD);
+			FibreStressGroup.push_back(0.0,CVD);
 			slabLength += deltaS_value; size += 1;
 		}
 
@@ -355,11 +360,22 @@ public:
 
 	ElementGroup& ComputePforceTorque(int iterating,int)
 	{
-		static thrust::device_vector<double> tempP, thrust::device_vector<double> tempXY;
+		static thrust::device_vector<double> tempP; static thrust::device_vector<double> tempXY;
 		tempP.resize(size); tempXY.resize(size);
 		thrust::transform(PupGroup.rbegin(CVD), PupGroup.rend(CVD), PdownGroup.rbegin(CVD), tempP.rbegin(), thrust::minus<double>());
 		thrust::transform(XGroup.rbegin(CVD), XGroup.rend(CVD), YGroup.rbegin(CVD), tempXY.rbegin(), [=]__device__(auto & it1, auto & it2) { return pow(it1 * it1 + it2 * it2, 0.5); });
 		PforceTorqueGroup(PforceTorqueGroup.size(CVD) - iterating - 1) = thrust::inner_product(tempP.begin(), tempP.end(), tempXY.begin(), 0.0);
+		return *this;
+	}
+
+	ElementGroup& ComputeFibreStress()
+	{
+		for (int i = this->size - 1; i > -1; i--)
+		{
+			this->FibreStressGroup[i] = 4.0 * this->viscosity * this->HGroup[i] * this->DeltaGroup[i]
+				+ 5.0 / 6.0 * this->viscosity * pow(this->HGroup[i], 3.0) * this->KGroup[i] * this->OmegaGroup[i]
+				+ 0.5 * this->HGroup[i] * (this->PupGroup[i] + this->PdownGroup[i]);
+		}
 		return *this;
 	}
 
@@ -400,6 +416,7 @@ public:
 		thrust::transform(thetaGroup.rbegin(CVD), thetaGroup.rend(CVD), deltaSGroup.rbegin(CVD), YGroup.rbegin(CVD), [=]__device__(auto & it1, auto & it2) { return sin(it1) * it2; });
 		thrust::exclusive_scan(XGroup.rbegin(CVD), XGroup.rend(CVD), XGroup.rbegin(CVD));
 		thrust::exclusive_scan(YGroup.rbegin(CVD), YGroup.rend(CVD), YGroup.rbegin(CVD));
+		return *this;
 	}
 
 	ElementGroup& ComputeY()
@@ -418,6 +435,7 @@ public:
 	{
 		thrust::transform(thetaGroup.rbegin(CVD), thetaGroup.rend(CVD), deltaSGroup.rbegin(CVD), YGroup.rbegin(CVD), [=]__device__(auto & it1, auto & it2) { return sin(it1) * it2; });
 		thrust::exclusive_scan(YGroup.rbegin(CVD), YGroup.rend(CVD), YGroup.rbegin(CVD));
+		return *this;
 	}
 
 	ElementGroup& ComputeSlabLength()
@@ -434,6 +452,13 @@ public:
 	ElementGroup& ComputeSlabLength(int)
 	{
 		slabLength = thrust::reduce(deltaSGroup.begin(CVD) + 1, deltaSGroup.end(CVD));
+		return *this;
+	}
+
+	ElementGroup& SaveFibreStress(std::ofstream& outfile)
+	{
+		vector_save(FibreStressGroup, outfile);
+		outfile << "\n";
 		return *this;
 	}
 

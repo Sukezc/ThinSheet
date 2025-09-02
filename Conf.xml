@@ -25,7 +25,7 @@
 <XYaddress>xy.csv</XYaddress>
 <ForceAddress>force.csv</ForceAddress>
 <TorqueAddress>torque.csv</TorqueAddress>
-<num_iterate>2501</num_iterate>
+<num_iterate>5001</num_iterate>
 <deltaT_coefficient>500</deltaT_coefficient>
 <Solver>RF</Solver>
 <BoundaryCondition>ClampedFree</BoundaryCondition>

@@ -96,6 +96,11 @@ void K_iterate(ElementGroup& eg)
 
 }
 
+void shear_stress_set(ElementGroup* eg, ModelConf& model)
+{
+
+}
+
 //5-
 void surface_force_iterate(ElementGroup& eg, ModelConf& model, int iterating)
 {
@@ -109,6 +114,8 @@ void surface_force_iterate(ElementGroup& eg, ModelConf& model, int iterating)
 	double dampingRate = model.dampingrate, criticalAngle = fabs(model.criticalangle);
 	std::for_each(eg.PupGroup.begin(), eg.PupGroup.end(), [](auto& it) {it = 0.0; });
 	std::for_each(eg.PdownGroup.begin(), eg.PdownGroup.end(), [](auto& it) {it = 0.0; });
+	std::for_each(eg.TupGroup.begin(), eg.TupGroup.end(), [](auto& it) {it = 0.0; });
+	std::for_each(eg.TdownGroup.begin(), eg.TdownGroup.end(), [](auto& it) {it = 0.0; });
 	eg.ComputeXY();
 
 	static long long start = 0;
@@ -164,6 +171,56 @@ void bodyforce_compute(ElementGroup& eg)
 	eg.ComputeGravityAll();
 }
 
+//5
+void Omega_Delta_iterate(ElementGroup& eg, ModelConf& model, SolverInterface* SolverHandle, bool ResetMatrix)
+{
+	//the number of length element
+	long long n = eg.size - 1;
+	static std::vector<double> vals;  static std::vector<double> b; static std::vector<int> rowPtr; static std::vector<int> colInd;
+
+	switch (model.boundaryCondition)
+	{
+	case BoundaryCondition::ClampedFree:
+		ClampedFree(eg, vals, rowPtr, colInd); break;
+	case BoundaryCondition::ClampedBoth:
+		ClampedBoth(eg, vals, rowPtr, colInd); break;
+	default:
+		break;
+	}
+	switch (model.forceCondition)
+	{
+	case ForceCondition::BodyForceOnly:
+		BodyForceOnly(eg, b); break;
+	case ForceCondition::SurfaceAndBodyForce:
+		SurfaceAndBodyForce(eg, b); break;
+	case ForceCondition::SurfaceForceOnly:
+		SurfaceForceOnly(eg, b); break;
+	default:
+		break;
+	}
+
+
+	if (ResetMatrix)
+	{
+		SolverHandle->Reset();
+		SolverHandle->Initialize(vals.data(), rowPtr.data(), colInd.data(), vals.size(), rowPtr.size());
+	}
+	else
+	{
+		SolverHandle->ResetA(vals.data());
+	}
+	SolverHandle->loadB(b.data());
+	SolverHandle->solve();
+	void* pContainer = SolverHandle->getContainer();
+	CuVector<double>& X = *static_cast<CuVector<double>*>(pContainer);
+	X.fetch();
+	for (long long i = n; i >= 0; i--)
+	{
+		long long j = n - i; double H = eg.HGroup[i];
+		eg.OmegaGroup[i] = X[j] / H / H / H;
+		eg.DeltaGroup[i] = X[j + n + 1] / H;
+	}
+}
 
 //{6,7}
 void omega_iterate(ElementGroup& eg, ModelConf& model)

@@ -306,16 +306,17 @@ extern "C"
 		{
 			reinterpret_cast<CusolverRfHandle*>(SolverHandle)->ResetAGpu(vals.data(CVD));
 		}
-		thrust::for_each(SolverHandle->X.begin(CVD), SolverHandle->X.end(CVD), []__device__(auto & it) { it = 0.0; });
+		CuVector<double>& X = *static_cast<CuVector<double>*>(SolverHandle->getContainer());
+		thrust::for_each(X.begin(CVD), X.end(CVD), []__device__(auto & it) { it = 0.0; });
 
 		switch (model.forceCondition)
 		{
 		case ForceCondition::BodyForceOnly:
-			BodyForceGpu(Egnew, SolverHandle->X); break;
+			BodyForceGpu(Egnew,X); break;
 		case ForceCondition::SurfaceAndBodyForce:
-			SurfaceForceGpu(Egnew, SolverHandle->X); BodyForceGpu(Egnew, SolverHandle->X); break;
+			SurfaceForceGpu(Egnew,X); BodyForceGpu(Egnew,X); break;
 		case ForceCondition::SurfaceForceOnly:
-			SurfaceForceGpu(Egnew, SolverHandle->X); break;
+			SurfaceForceGpu(Egnew,X); break;
 		default:
 			break;
 		}
@@ -325,15 +326,16 @@ extern "C"
 
 	void omega_velocity_iterate_gpu(ElementGroup& Egnew, ModelConf& model,SolverInterface* handle)
 	{
-		auto size = handle->X.size(CVD)/2;
+		CuVector<double>& X = *static_cast<CuVector<double>*>(handle->getContainer());
+		auto size = X.size(CVD)/2;
 		//Egnew.omegaGroup.SyncSize(HostToDevice());
 		//Egnew.velocityGroup.SyncSize(HostToDevice());
 		
-		thrust::reverse(handle->X.begin(CVD), handle->X.end(CVD));
-		thrust::transform(handle->X.begin(CVD), handle->X.begin(CVD) + size, Egnew.HGroup.begin(CVD), handle->X.begin(CVD), []__device__(auto & it1, auto & it2) { return it1 / it2; });
-		thrust::transform(handle->X.begin(CVD) + size, handle->X.end(CVD), Egnew.HGroup.begin(CVD), handle->X.begin(CVD) + size, []__device__(auto & it1, auto & it2) { return it1 / it2 / it2 / it2; });
-		thrust::copy(handle->X.begin(CVD), handle->X.begin(CVD) + size, Egnew.DeltaGroup.begin(CVD));
-		thrust::copy(handle->X.begin(CVD) + size, handle->X.end(CVD), Egnew.OmegaGroup.begin(CVD));
+		thrust::reverse(X.begin(CVD), X.end(CVD));
+		thrust::transform(X.begin(CVD), X.begin(CVD) + size, Egnew.HGroup.begin(CVD), X.begin(CVD), []__device__(auto & it1, auto & it2) { return it1 / it2; });
+		thrust::transform(X.begin(CVD) + size, X.end(CVD), Egnew.HGroup.begin(CVD), X.begin(CVD) + size, []__device__(auto & it1, auto & it2) { return it1 / it2 / it2 / it2; });
+		thrust::copy(X.begin(CVD), X.begin(CVD) + size, Egnew.DeltaGroup.begin(CVD));
+		thrust::copy(X.begin(CVD) + size, X.end(CVD), Egnew.OmegaGroup.begin(CVD));
 		
 		Egnew.omegaGroup(size - 1) = 0.0;
 		Egnew.omegaGroup(size - 2) = -(Egnew.OmegaGroup(size - 1) + Egnew.OmegaGroup(size - 2)) * Egnew.deltaSGroup(size - 1) / 2.0;

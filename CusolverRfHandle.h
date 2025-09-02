@@ -55,6 +55,7 @@ public:
 	CuVector<int> Q;
 	//std::vector<int,CudaAllocator<int>> P;
 	//std::vector<int,CudaAllocator<int>> Q;
+	CuVector<double> X;
 
 	int n;
 	int nzero, nboost;
@@ -63,8 +64,8 @@ public:
 
 public:
 	CusolverRfHandle(double nzero = 0.0,double nboost = 0.0, 
-		cusolverRfFactorization_t fact_alg = CUSOLVERRF_FACTORIZATION_ALG0,
-		cusolverRfTriangularSolve_t solve_alg = CUSOLVERRF_TRIANGULAR_SOLVE_ALG1
+		cusolverRfFactorization_t fact_alg = CUSOLVERRF_FACTORIZATION_ALG2,
+		cusolverRfTriangularSolve_t solve_alg = CUSOLVERRF_TRIANGULAR_SOLVE_ALG3
 	):cusolverRfH(NULL),cusolverSpH(NULL),descrA(NULL),info(NULL),n(0),nzero(nzero), nboost(nboost),fact_alg(fact_alg),solve_alg(solve_alg)
 	{
 		checkCudaErrors(cusolverSpCreate(&cusolverSpH));
@@ -86,6 +87,11 @@ public:
 		if (cusolverSpH) { checkCudaErrors(cusolverSpDestroy(cusolverSpH)); }
 		if (descrA) { checkCudaErrors(cusparseDestroyMatDescr(descrA)); }
 		if (info) { checkCudaErrors(cusolverSpDestroyCsrluInfoHost(info)); }
+	}
+
+	void* getContainer()
+	{
+		return static_cast<void*>(&(this->X));
 	}
 
 	void Initialize(const double* csrval, const int* csrrowptr, const int* csrcolind, const long long vals_size, const int row_size)

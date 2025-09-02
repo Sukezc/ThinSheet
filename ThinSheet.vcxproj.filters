@@ -64,9 +64,6 @@
     <CudaCompile Include="element_iterate_gpu.cu">
       <Filter>源文件</Filter>
     </CudaCompile>
-    <CudaCompile Include="main.cu">
-      <Filter>源文件</Filter>
-    </CudaCompile>
     <CudaCompile Include="CuVector.h">
       <Filter>头文件</Filter>
     </CudaCompile>
@@ -79,5 +76,13 @@
     <CudaCompile Include="computeWidget.cu">
       <Filter>源文件</Filter>
     </CudaCompile>
+    <CudaCompile Include="main.cu">
+      <Filter>源文件</Filter>
+    </CudaCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Xml Include="Conf.xml">
+      <Filter>资源文件</Filter>
+    </Xml>
   </ItemGroup>
 </Project>

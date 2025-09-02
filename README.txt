@@ -1,0 +1,7 @@
+压缩包内打包的是程序的所有源代码。Conf.xml是程序运行所需要的配置文件。
+
+源代码需要使用nvcc编译器进行编译。
+
+程序中的矩阵求解使用了nvidia官方提供的cusolverDf库，需要有nvidia官方的cusolver库支持。在无nvidia显卡的主机上无法运行。
+
+outdata和outdata1中存放的是模拟结果、原始数据和画图脚本。
